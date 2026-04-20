@@ -1,42 +1,53 @@
 # Validation Module
 
-# -------------------- FLIGHT --------------------
+from passenger import load_passengers, seats_used
 
-def validate_flight(flight_id, arrival, departure):
+# -------------------- FLIGHT --------------------
+def validate_flight(flight_id, arrival, departure, flight_type, date, existing_flights):
 
     if flight_id.strip() == "":
         print("Invalid Flight ID")
         return False
 
-    # REMOVE SPACES
-    arrival = arrival.strip()
-    departure = departure.strip()
+    # 🔹 duplicate check
+    for f in existing_flights:
+        if f.fno == flight_id:
+            print("Duplicate Flight ID not allowed")
+            return False
 
+    # 🔹 time validation
     if not arrival.isdigit() or not departure.isdigit():
         print("Arrival/Departure must be numbers")
         return False
 
     if int(arrival) >= int(departure):
-        print("Arrival time must be less than departure time")
+        print("Arrival must be < Departure")
+        return False
+
+    # 🔹 flight type validation (NEW)
+    if flight_type not in ["Domestic", "International"]:
+        print("Invalid Flight Type")
+        return False
+
+    # 🔹 date validation (basic check)
+    if date.strip() == "":
+        print("Date cannot be empty")
         return False
 
     return True
-
-
 # -------------------- AIRCRAFT --------------------
 
-def validate_aircraft(aircraft_id, flight_no, aircraft_type):
+def validate_aircraft(aircraft_id, atype):
 
-    if aircraft_id.strip() == "" or flight_no.strip() == "":
-        print("Aircraft ID and Flight No cannot be empty")
+    if aircraft_id.strip() == "":
+        print("Aircraft ID cannot be empty")
         return False
 
-    if aircraft_type not in ["Wide", "Narrow"]:
-        print("Aircraft type must be Wide or Narrow")
+    if atype not in ["Wide", "Narrow"]:
+        print("Invalid aircraft type")
         return False
 
     return True
-
 
 # -------------------- CREW --------------------
 
@@ -55,26 +66,54 @@ def validate_crew(crew_id, name, role):
 
 # -------------------- PASSENGER --------------------
 
-def validate_passenger(passenger_id, name, flight_no, seat_no, ticket_class):
 
-    if passenger_id.strip() == "" or name.strip() == "":
-        print("Passenger ID and Name cannot be empty")
+
+def validate_passenger_booking(pid, name, flight, seat, passengers, seats_used_func):
+
+    # ---------------- EMPTY CHECK ----------------
+    if pid.strip() == "" or name.strip() == "":
+        print("❌ Passenger ID and Name cannot be empty")
         return False
 
-    if flight_no.strip() == "":
-        print("Flight number cannot be empty")
+    # ---------------- FLIGHT CHECK ----------------
+    if flight is None:
+        print("❌ Invalid flight selected")
         return False
 
-    if seat_no.strip() == "":
-        print("Seat number cannot be empty")
+    # ---------------- FLIGHT ID CHECK ----------------
+    if not hasattr(flight, "fno") or flight.fno.strip() == "":
+        print("❌ Flight data corrupted")
         return False
 
-    if ticket_class not in ["Economy", "Business", "First"]:
-        print("Invalid ticket class")
+    # ---------------- SEAT CHECK ----------------
+    if seat.strip() == "":
+        print("❌ Seat number cannot be empty")
+        return False
+
+    # ---------------- DUPLICATE BOOKING CHECK ----------------
+    for p in passengers:
+        if p.pid == pid and p.fno == flight.fno:
+            print("❌ Already booked this flight")
+            return False
+
+    # ---------------- SEAT ALREADY TAKEN ----------------
+    for p in passengers:
+        if p.fno == flight.fno and p.seat == seat:
+            print("❌ Seat already taken")
+            return False
+
+    # ---------------- CAPACITY CHECK ----------------
+    if not hasattr(flight, "capacity"):
+        print("❌ Flight capacity missing")
+        return False
+
+    capacity = int(flight.capacity)
+
+    if seats_used_func(flight.fno) >= capacity:
+        print("❌ Flight is full")
         return False
 
     return True
-
 
 # -------------------- GATE --------------------
 
@@ -145,7 +184,7 @@ def validate_disruption(disruption_id, flight_no, dtype, status):
         print("Invalid disruption details")
         return False
 
-    if dtype not in ["Delay", "Technical", "Weather"]:
+    if dtype not in ["Delay", "Technical", "Weather", "Cancellation"]:
         print("Invalid disruption type")
         return False
 

@@ -1,101 +1,81 @@
-# Class Gate to store gate details
-
 from validation import validate_gate
-from constraint_checking import check_gate_constraints  
 
 
 class Gate:
-    def __init__(self, gate_id, terminal_no, gate_type,
-                 max_aircraft_size, availability):
 
-        self.gate_id = gate_id
-        self.terminal_no = terminal_no
-        self.gate_type = gate_type
-        self.max_aircraft_size = max_aircraft_size
+    def __init__(self, gid, terminal, gtype, size, availability):
+        self.gate_id = gid
+        self.terminal = terminal
+        self.gate_type = gtype
+        self.max_aircraft_size = size
         self.availability = availability
 
-    # Display method
-    def display(self):
-        print("Gate ID:", self.gate_id,
-              "| Terminal:", self.terminal_no,
-              "| Type:", self.gate_type,
-              "| Max Size:", self.max_aircraft_size,
-              "| Status:", self.availability)
 
-
-# Load gate data from gates.txt
+# ---------------- LOAD ----------------
 def load_gates():
-    gates = []
+    lst = []
 
     try:
-        with open("gates.txt", "r") as f:
+        with open("gates.txt") as f:
             for line in f:
                 data = line.strip().split(",")
 
                 if len(data) != 5:
-                    print("Invalid gate data:", line)
                     continue
 
-                gate = Gate(*data)
-                gates.append(gate)
+                lst.append(Gate(*data))
+    except:
+        pass
 
-    except FileNotFoundError:
-        print("gates.txt not found. It will be created when data is added.")
-
-    return gates
+    return lst
 
 
-# Display gate details
+# ---------------- DISPLAY ----------------
 def display_gates():
+
     gates = load_gates()
 
-    if len(gates) == 0:
-        print("\nNo gate data available.")
+    if not gates:
+        print("No gates available")
         return
 
-    print("\n--- Gate Details ---")
+    print("\n--- Gates ---")
     for g in gates:
-        g.display()
+        print(f"{g.gate_id} | {g.terminal} | {g.gate_type} | {g.max_aircraft_size} | {g.availability}")
 
 
-# Write gate data to file
+# ---------------- WRITE ----------------
 def writeData():
-    print("Airport Operations Management System - Gate Module")
 
-    n = int(input("Enter number of gates to add: "))
+    n = int(input("Number of gates: "))
+    existing = load_gates()
 
-    with open("gates.txt", "a") as file:
+    new_gates_added = False
 
-        for i in range(n):
-            print("\nEnter details for Gate", i + 1)
+    with open("gates.txt", "a") as f:
 
-            gate_id = input("Gate ID: ")
-            terminal_no = input("Terminal Number: ")
-            gate_type = input("Gate Type (Domestic/International): ")
-            max_aircraft_size = input("Max Aircraft Size Supported (Wide/Narrow): ")
-            availability = input("Availability Status (Free/Occupied): ")
+        for _ in range(n):
 
-            # STEP 1: VALIDATION
-            if not validate_gate(gate_id, gate_type, max_aircraft_size, availability):
-                print("Invalid input. Skipping this entry...\n")
+            gid = input("Gate ID: ")
+            terminal = input("Terminal: ")
+            gtype = input("Type (Domestic/International): ")
+            size = input("Max Size (Wide/Narrow): ")
+            availability = "Free"   # 🔥 IMPORTANT FIX (don’t take input)
+
+            if not validate_gate(gid, gtype, size, availability):
                 continue
 
-            # STEP 2: CONSTRAINT CHECK
-            if not check_gate_constraints(load_gates(), gate_id,
-                                          max_aircraft_size, gate_type):
-                print("Constraint violation. Skipping this entry...\n")
+            if any(g.gate_id == gid for g in existing):
+                print("Duplicate Gate ID")
                 continue
 
-            # Only valid + constraint-safe data stored
-            g = Gate(gate_id, terminal_no,
-                     gate_type, max_aircraft_size,
-                     availability)
+            f.write(",".join([gid, terminal, gtype, size, availability]) + "\n")
 
-            file.write(gate_id + "," +
-                       terminal_no + "," +
-                       gate_type + "," +
-                       max_aircraft_size + "," +
-                       availability + "\n")
+            existing.append(Gate(gid, terminal, gtype, size, availability))
+            new_gates_added = True
 
-    print("\nGates added successfully!")
-    display_gates()
+    print("✅ Gates added")
+     
+    from allocation_engine import auto_allocate_gate
+    auto_allocate_gate()
+

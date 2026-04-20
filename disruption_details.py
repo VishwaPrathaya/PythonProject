@@ -6,11 +6,12 @@ from constraint_checking import check_disruption_constraints   # ✅ ADDED
 
 class Disruption:
 
-    def __init__(self, disruption_id, flight_no, disruption_type, status):
+    def __init__(self, disruption_id, flight_no, disruption_type, status, priority):
         self.disruption_id = disruption_id
         self.flight_no = flight_no
         self.disruption_type = disruption_type
         self.status = status
+        self.priority = priority
 
     # Display method
     def display(self):
@@ -30,7 +31,7 @@ def load_disruptions():
             for line in f:
                 data = line.strip().split(",")
 
-                if len(data) != 4:
+                if len(data) != 5:
                     print("Invalid disruption data:", line)
                     continue
 
@@ -58,6 +59,7 @@ def display_disruptions():
         d.display()
 
 
+
 # Write data to file
 def writeData():
 
@@ -73,26 +75,42 @@ def writeData():
 
             disruption_id = input("Disruption ID: ")
             flight_no = input("Flight Number: ")
-            disruption_type = input("Type (Delay/Technical/Weather): ")
+            disruption_type = input("Type (Delay/Technical/Weather/Cancellation): ")
             status = input("Status (Resolved/Pending): ")
+            priority = input("Priority (High/Medium/Low): ")
 
             # STEP 1: VALIDATION
             if not validate_disruption(disruption_id, flight_no, disruption_type, status):
                 print("Invalid input. Skipping this entry...\n")
                 continue
 
-            # STEP 2: CONSTRAINT CHECK
-            if not check_disruption_constraints(disruption_type, status):
-                print("Constraint violation. Skipping this entry...\n")
-                continue
+            # CREATE OBJECT
+            d = Disruption(disruption_id, flight_no, disruption_type, status, priority)
 
-            # Only valid + constraint-safe data stored
-            d = Disruption(disruption_id, flight_no, disruption_type, status)
+            # SAVE
+            file.write(",".join([
+                disruption_id, flight_no,
+                disruption_type, status, priority
+            ]) + "\n")
 
-            file.write(disruption_id + "," +
-                       flight_no + "," +
-                       disruption_type + "," +
-                       status + "\n")
+            # 🔥 FIX: TRIGGER INSIDE LOOP
+            if disruption_type == "Cancellation":
+                print("⚠️ Trigger: Release aircraft, crew, gate, runway")
+
+                from allocation_engine import handle_cancellation
+                handle_cancellation(flight_no)
+
+            elif disruption_type == "Delay":
+                print("⚠️ Trigger: Reschedule flight")
+
+                from allocation_engine import handle_delay
+                handle_delay(flight_no)
+
+            elif disruption_type in ["Technical", "Weather"]:
+                print("⚠️ Trigger: Re-optimization required")
+
+                from optimization import optimized_allocation_flow
+                optimized_allocation_flow()
 
     print("\nDisruption details added successfully!")
     display_disruptions()

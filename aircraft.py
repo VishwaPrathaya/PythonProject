@@ -1,55 +1,72 @@
-from validation import validate_aircraft
-from constraint_checking import check_aircraft_constraints
-
-
 class Aircraft:
 
-    def __init__(self, aircraft_id, flight_no, airline, atype,
-                 seating, maintenance, location):
-
-        self.aircraft_id = aircraft_id
-        self.flight_no = flight_no
-        self.airline = airline
+    def __init__(self, aid, atype, location, maintenance, tat):
+        self.aircraft_id = aid
         self.atype = atype
-        self.seating = seating
-        self.maintenance = maintenance
         self.location = location
+        self.maintenance = maintenance
+        self.turnaround_time = int(tat)
 
 
+# ---------------- LOAD ----------------
 def load_aircraft():
     lst = []
+
     try:
         with open("aircraft.txt") as f:
             for line in f:
                 data = line.strip().split(",")
-                if len(data) == 7:
-                    lst.append(Aircraft(*data))
+
+                if len(data) != 5:
+                    continue
+
+                lst.append(Aircraft(*data))
     except:
         pass
+
     return lst
 
 
+# ---------------- DISPLAY ----------------
+def display_aircraft():
+
+    aircraft_list = load_aircraft()
+
+    if not aircraft_list:
+        print("No aircraft available")
+        return
+
+    print("\n--- Aircraft ---")
+    for a in aircraft_list:
+        print(f"{a.aircraft_id} | {a.atype} | {a.location} | {a.maintenance} | TAT: {a.turnaround_time}")
+
+
+# ---------------- WRITE ----------------
 def writeData():
 
     n = int(input("Aircraft count: "))
+    existing = load_aircraft()
 
     with open("aircraft.txt", "a") as f:
 
         for _ in range(n):
 
-            aid = input("ID: ")
-            fno = input("Flight: ")
-            airline = input("Airline: ")
-            atype = input("Type: ")
-            seating = input("Seating: ")
-
-            if not validate_aircraft(aid, fno, atype):
-                continue
-
+            aid = input("Aircraft ID: ")
+            atype = input("Type (Wide/Narrow): ")
+            location = input("Location (Airport/Other): ")
             maintenance = input("Maintenance (Yes/No): ")
-            location = input("Location: ")
+            tat = input("Turnaround Time: ")
 
-            if not check_aircraft_constraints(load_aircraft(), aid, maintenance, location):
+            if not tat.isdigit():
+                print("Invalid turnaround time")
                 continue
 
-            f.write(",".join([aid, fno, airline, atype, seating, maintenance, location]) + "\n")
+            if any(a.aircraft_id == aid for a in existing):
+                print("Duplicate Aircraft ID")
+                continue
+
+            f.write(",".join([aid, atype, location, maintenance, tat]) + "\n")
+
+            existing.append(Aircraft(aid, atype, location, maintenance, tat))
+
+    print("✅ Aircraft added")

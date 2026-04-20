@@ -10,11 +10,6 @@ class Resource:
         self.res_type = res_type
         self.status = status
 
-    def display(self):
-        print("Resource ID:", self.res_id,
-              "| Type:", self.res_type,
-              "| Status:", self.status)
-
 
 def load_resources():
 
@@ -37,26 +32,27 @@ def load_resources():
 
     return resource_list
 
-
 def display_resources():
-
     resource_list = load_resources()
 
     if not resource_list:
-        print("\nNo resources available.")
+        print("\nNo ground resources available.")
         return
 
-    print("\n--- Ground Resources ---")
+    print("\n===== GROUND RESOURCES =====")
 
     for r in resource_list:
-        r.display()
-
+        print("\nResource ID   :", r.res_id)
+        print("Type          :", r.res_type)
+        print("Status        :", r.status)
+        print("-----------------------------")
 
 def writeData():
 
     print("Ground Resources Module")
 
     n = int(input("Enter number of resources: "))
+    existing = load_resources()   # ✅ load once
 
     with open("ground_resources.txt", "a") as file:
 
@@ -68,20 +64,19 @@ def writeData():
             res_type = input("Resource Type: ")
             status = input("Status (Available/In Use): ")
 
-            # VALIDATION
             if not validate_resource(res_id, res_type, status):
                 print("Invalid input. Skipping...\n")
                 continue
 
-            resource_list = load_resources()
-
-            # CONSTRAINT CHECK
-            if not check_resource_constraints(resource_list, res_id):
-                print("Constraint violation. Skipping...\n")
+            # 🔹 Duplicate check
+            if any(r.res_id == res_id for r in existing):
+                print("Duplicate Resource ID not allowed")
                 continue
 
             file.write(",".join([res_id, res_type, status]) + "\n")
 
+            # update list
+            existing.append(Resource(res_id, res_type, status))
+
     print("\nResources added successfully!")
-    display_resources()
     

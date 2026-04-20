@@ -1,1 +1,2 @@
-
+C1,John,Pilot,F101,Morning,Narrow,Assigned,8,12
+C2,Alex,Co-Pilot,F101,Morning,Narrow,Assigned,8,12

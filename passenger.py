@@ -1,96 +1,51 @@
-# Class Passenger to store passenger details
-from validation import validate_passenger   # NEW
+from data_loader import load_flights
 
 class Passenger:
 
-    def __init__(self, passenger_id, name, flight_no, seat_no, ticket_class):
-        self.passenger_id = passenger_id
+    def __init__(self, pid, name, fno, seat, ticket_class="Economy", status="Booked"):
+        self.pid = pid
         self.name = name
-        self.flight_no = flight_no
-        self.seat_no = seat_no
+        self.fno = fno
+        self.seat = seat
         self.ticket_class = ticket_class
-
-    # Display passenger details
-    def display(self):
-        print("Passenger ID:", self.passenger_id,
-              "| Name:", self.name,
-              "| Flight:", self.flight_no,
-              "| Seat:", self.seat_no,
-              "| Class:", self.ticket_class)
+        self.status = status
 
 
-# Load passenger data from file
+# ---------------- LOAD ----------------
 def load_passengers():
 
-    passengers = []
+    lst = []
 
     try:
-        with open("passenger.txt", "r") as f:
+        with open("passenger.txt") as f:
             for line in f:
-
                 data = line.strip().split(",")
 
-                if len(data) != 5:
-                    print("Invalid passenger data:", line)
+                if len(data) not in [4, 6]:
                     continue
 
-                p = Passenger(*data)
-                passengers.append(p)
-
+                lst.append(Passenger(*data))
     except FileNotFoundError:
-        print("passenger.txt not found. File will be created when data is added.")
+        pass
 
-    return passengers
+    return lst
 
 
-# Display passenger details
+# ---------------- DISPLAY ----------------
 def display_passengers():
 
     passengers = load_passengers()
 
-    if len(passengers) == 0:
-        print("\nNo passenger data available.")
+    if not passengers:
+        print("No passengers found")
         return
 
-    print("\n--- Passenger Details ---")
-
+    print("\n--- PASSENGERS ---")
     for p in passengers:
-        p.display()
+        print(f"{p.pid} | {p.name} | {p.fno} | {p.seat}")
 
 
-# Write passenger data
-def writeData():
+# ---------------- SEAT COUNT ----------------
+def seats_used(fno):
 
-    print("Airport Operations Management System - Passenger Module")
-
-    n = int(input("Enter number of passengers to add: "))
-
-    with open("passenger.txt", "a") as file:
-
-        for i in range(n):
-
-            print("\nEnter details for Passenger", i + 1)
-
-            passenger_id = input("Passenger ID: ")
-            name = input("Passenger Name: ")
-            flight_no = input("Flight Number: ")
-            seat_no = input("Seat Number: ")
-            ticket_class = input("Ticket Class (Economy/Business/First): ")
-
-            # ✅ FIXED VALIDATION CALL
-            if not validate_passenger(passenger_id, name, flight_no, seat_no, ticket_class):
-                print("Invalid input. Skipping this entry...\n")
-                continue
-
-            # Only valid data stored
-            p = Passenger(passenger_id, name, flight_no,
-                          seat_no, ticket_class)
-
-            file.write(passenger_id + "," +
-                       name + "," +
-                       flight_no + "," +
-                       seat_no + "," +
-                       ticket_class + "\n")
-
-    print("\nPassengers added successfully!")
-    display_passengers()
+    return sum(1 for p in load_passengers() if p.fno == fno)

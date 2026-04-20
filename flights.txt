@@ -1,2 +1,1 @@
-
-FL01,12,13,ac1
+F101,Indigo,Chennai,Mumbai,900,1100,24-04-2026,NA,Domestic,70

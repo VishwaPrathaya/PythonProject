@@ -1,106 +1,65 @@
-import flights
-import gates
-import runways
-import crew
-import ground_resources
+from allocation_engine import allocate_flight
+from data_loader import load_flights
 
 
-# ---------------- GATE ALLOCATION ----------------
-def allocate_gate():
+# ---------------- PRIORITY RULE ----------------
+def flight_priority(f):
 
-    flight_list = flights.load_flights()
-    gate_list = gates.load_gates()
+    score = 0
 
-    print("\n--- Gate Allocation ---")
+    # International flights → higher priority
+    if getattr(f, "flight_type", "Domestic") == "International":
+        score += 100
 
-    for f in flight_list:
+    # Earlier arrival → higher priority
+    try:
+        score += (1000 - int(f.arr))
+    except:
+        pass
 
-        for g in gate_list:
-
-            if g.availability == "Free":
-
-                print("Flight", f.fno, "-> Gate", g.gate_id)
-
-                g.availability = "Occupied"
-                break
-
-        else:
-            print("No gate available for Flight", f.fno)
+    return score
 
 
-# ---------------- RUNWAY ALLOCATION ----------------
-def allocate_runway():
-
-    flight_list = flights.load_flights()
-    runway_list = runways.load_runways()
-
-    print("\n--- Runway Allocation ---")
-
-    for f in flight_list:
-
-        for r in runway_list:
-
-            if r.availability == "Free" and r.maintenance_window == "No":
-
-                print("Flight", f.fno, "-> Runway", r.runway_id)
-
-                r.availability = "Occupied"
-                break
-
-        else:
-            print("No runway available for Flight", f.fno)
+# ---------------- SORT FLIGHTS ----------------
+def prioritize_flights(flights):
+    return sorted(flights, key=flight_priority, reverse=True)
 
 
-# ---------------- CREW ALLOCATION ----------------
-def allocate_crew():
+# ---------------- MAIN OPTIMIZATION ENGINE ----------------
+def optimized_allocation_flow():
 
-    flight_list = flights.load_flights()
-    crew_list = crew.load_crew()
+    flights = load_flights()
 
-    print("\n--- Crew Allocation ---")
+    if not flights:
+        print("No flights available for optimization")
+        return
 
-    for f in flight_list:
+    # Step 1: sort flights
+    ordered_flights = prioritize_flights(flights)
 
-        for c in crew_list:
+    print("\n=== OPTIMIZED ALLOCATION STARTED ===")
 
-            if c.status == "Available":
+    allocated = 0
+    skipped = 0
 
-                print("Flight", f.fno, "-> Crew", c.crew_id)
+    # Step 2: allocate each flight
+    for f in ordered_flights:
 
-                c.status = "Busy"
-                break
+        # skip already allocated flights
+        if getattr(f, "aircraft", "NA") != "NA":
+            skipped += 1
+            continue
 
-        else:
-            print("No crew available for Flight", f.fno)
+        print(f"\n🔄 Allocating Flight {f.fno}...")
+        allocate_flight(f)
 
+        from allocation_engine import load_allocations
 
-# ---------------- RESOURCE ALLOCATION ----------------
-def allocate_resources():
+        allocations = load_allocations()
 
-    flight_list = flights.load_flights()
-    resource_list = ground_resources.load_resources()
+        if f.fno in allocations:
+             allocated += 1
 
-    print("\n--- Resource Allocation ---")
-
-    for f in flight_list:
-
-        for r in resource_list:
-
-            if r.status == "Available":
-
-                print("Flight", f.fno, "-> Resource", r.res_id)
-
-                r.status = "In Use"
-                break
-
-        else:
-            print("No resource available for Flight", f.fno)
-
-
-# ---------------- MAIN FUNCTION ----------------
-def run_allocation():
-
-    allocate_gate()
-    allocate_runway()
-    allocate_crew()
-    allocate_resources()
+    print("\n=== OPTIMIZATION COMPLETE ===")
+    print(f"✅ Allocated: {allocated}")
+    print(f"⏭️ Skipped (already allocated): {skipped}")

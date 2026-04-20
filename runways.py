@@ -10,7 +10,7 @@ class Runway:
                  runway_id, usage, maintenance_window,
                  maintenance_from, maintenance_to):
 
-        self.length = length
+        self.length = int(length)
         self.availability = availability
         self.assigned_flight = assigned_flight
         self.runway_id = runway_id
@@ -70,51 +70,77 @@ def display_runways():
         r.display()
 
 
+def auto_allocate_runways():
+
+    from data_loader import load_flights
+    from allocation_engine import allocate_flight
+
+    flights = load_flights()
+
+    for flight in flights:
+
+        # skip already allocated
+        if flight.aircraft == "NA":
+            continue
+
+        # try allocate runway through full system
+        allocate_flight(flight)
+
 # Write runway data into file
 def writeData():
 
-    print("Airport Operations Management System - Runway Module")
+    print("Runway Module")
+    n = int(input("Enter number of runways: "))
+    existing = load_runways()
 
-    n = int(input("Enter number of runways to add: "))
+    new_runway_added = False
 
     with open("runwaydetails.txt", "a") as file:
 
-        for i in range(n):
-
-            print("\nEnter details for Runway", i + 1)
+        for _ in range(n):
 
             runway_id = input("Runway ID: ")
-            length = input("Runway Length (meters): ")
-            availability = input("Availability Status (Free/Occupied): ")
-            assigned_flight = input("Assigned Flight Number (NA if none): ")
-            usage = input("Usage Restriction (Takeoff/Landing/Both): ")
-            maintenance_window = input("Maintenance Window Available (Yes/No): ")
-            maintenance_from = input("Maintenance From (time or NA): ")
-            maintenance_to = input("Maintenance To (time or NA): ")
+            length = input("Length: ")
+            availability = input("Availability (Free/Occupied): ")
+            assigned_flight = "NA"
+            usage = input("Usage (Takeoff/Landing/Both): ")
+            maintenance_window = input("Maintenance (Yes/No): ")
+            maintenance_from = input("From (NA if none): ")
+            maintenance_to = input("To (NA if none): ")
 
-            # ✅ STEP 1: VALIDATION
+            # 🔹 validation
             if not validate_runway(length, availability, usage, maintenance_window):
-                print("Invalid input. Skipping this entry...\n")
                 continue
 
-            # ✅ STEP 2: CONSTRAINT CHECK
-            if not check_runway_constraints(load_runways(), runway_id):
-                print("Constraint violation. Skipping this entry...\n")
+            # duplicate check
+            if any(r.runway_id == runway_id for r in existing):
+                print("Duplicate runway")
                 continue
 
-            # Only valid + constraint-safe data stored
-            r = Runway(length, availability, assigned_flight,
-                       runway_id, usage, maintenance_window,
-                       maintenance_from, maintenance_to)
+            # maintenance check
+            if maintenance_window == "No" and (maintenance_from != "NA" or maintenance_to != "NA"):
+                print("Invalid maintenance data")
+                continue
 
-            file.write(length + "," +
-                       availability + "," +
-                       assigned_flight + "," +
-                       runway_id + "," +
-                       usage + "," +
-                       maintenance_window + "," +
-                       maintenance_from + "," +
-                       maintenance_to + "\n")
+            if maintenance_window == "Yes" and (maintenance_from == "NA" or maintenance_to == "NA"):
+                print("Missing maintenance time")
+                continue
 
-    print("\nRunways added successfully!")
-    display_runways()
+            file.write(",".join([
+                length, availability, assigned_flight,
+                runway_id, usage, maintenance_window,
+                maintenance_from, maintenance_to
+            ]) + "\n")
+
+            existing.append(Runway(
+                length, availability, assigned_flight,
+                runway_id, usage, maintenance_window,
+                maintenance_from, maintenance_to
+            ))
+
+            new_runway_added = True
+
+    print("✅ Runways added")
+
+    if new_runway_added:
+        auto_allocate_runways()
