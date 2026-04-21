@@ -1,1 +1,3 @@
 G1,Terminal1,Domestic,Narrow,Occupied
+G2,Terminal2,International,Narrow,Occupied
+G3,Terminal1,Domestic,Narrow,Free

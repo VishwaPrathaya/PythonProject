@@ -48,23 +48,23 @@ def writeData():
             flight_type = input("Flight Type (Domestic/International): ")
             capacity = input("Capacity: ")
 
-            # 🔹 STEP 1: VALIDATION
+            # - STEP 1: VALIDATION
             if not validate_flight(fno, arr, dep, flight_type, date, existing):
-                print("❌ Validation failed\n")
+                print(" Validation failed\n")
                 continue
 
-            # 🔹 STEP 2: CONSTRAINT CHECK
+            # - STEP 2: CONSTRAINT CHECK
             if not validate_flight_constraints(existing, fno, int(arr), int(dep)):
-                print("❌ Constraint violation\n")
+                print("- Constraint violation\n")
                 continue
 
-            # 🔹 CREATE OBJECT (NO AIRCRAFT YET)
+            # - CREATE OBJECT (NO AIRCRAFT YET)
             new_flight = Flight(
                 fno, airline, origin, destination,
                 arr, dep, date, "NA", flight_type
             )
 
-            # 🔹 SAVE BASIC FLIGHT FIRST
+            # - SAVE BASIC FLIGHT FIRST
             file.write(",".join([
                 fno, airline, origin, destination,
                 arr, dep, date, "NA", flight_type, capacity
@@ -72,9 +72,9 @@ def writeData():
 
             existing.append(new_flight)
 
-            print("✅ Flight added successfully")
+            print(" Flight added successfully")
 
-            # 🔥🔥🔥 IMPORTANT (YOU MISSED THIS BEFORE)
+            
             # AUTO ALLOCATION TRIGGER
             allocate_flight(new_flight)
 

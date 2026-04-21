@@ -60,7 +60,7 @@ def writeData():
             terminal = input("Terminal: ")
             gtype = input("Type (Domestic/International): ")
             size = input("Max Size (Wide/Narrow): ")
-            availability = "Free"   # 🔥 IMPORTANT FIX (don’t take input)
+            availability = "Free"   
 
             if not validate_gate(gid, gtype, size, availability):
                 continue
@@ -74,7 +74,7 @@ def writeData():
             existing.append(Gate(gid, terminal, gtype, size, availability))
             new_gates_added = True
 
-    print("✅ Gates added")
+    print(" Gates added")
      
     from allocation_engine import auto_allocate_gate
     auto_allocate_gate()

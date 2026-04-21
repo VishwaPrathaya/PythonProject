@@ -1,7 +1,7 @@
 # Class Disruption to store disruption details
 
 from validation import validate_disruption
-from constraint_checking import check_disruption_constraints   # ✅ ADDED
+from constraint_checking import check_disruption_constraints 
 
 
 class Disruption:
@@ -93,21 +93,21 @@ def writeData():
                 disruption_type, status, priority
             ]) + "\n")
 
-            # 🔥 FIX: TRIGGER INSIDE LOOP
+            
             if disruption_type == "Cancellation":
-                print("⚠️ Trigger: Release aircraft, crew, gate, runway")
+                print(" Trigger: Release aircraft, crew, gate, runway")
 
                 from allocation_engine import handle_cancellation
                 handle_cancellation(flight_no)
 
             elif disruption_type == "Delay":
-                print("⚠️ Trigger: Reschedule flight")
+                print("- Trigger: Reschedule flight")
 
                 from allocation_engine import handle_delay
                 handle_delay(flight_no)
 
             elif disruption_type in ["Technical", "Weather"]:
-                print("⚠️ Trigger: Re-optimization required")
+                print(" Trigger: Re-optimization required")
 
                 from optimization import optimized_allocation_flow
                 optimized_allocation_flow()

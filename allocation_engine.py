@@ -170,7 +170,7 @@ def allocate_flight(flight):
     allocations = load_allocations()
 
     if flight.fno in allocations:
-        print("⚠️ Already allocated")
+        print(" Already allocated")
         return
 
     aircraft_list = load_aircraft()
@@ -186,7 +186,7 @@ def allocate_flight(flight):
     # -------- AIRCRAFT --------
     aircraft = get_available_aircraft(flight, aircraft_list, flights)
     if not aircraft:
-        print("❌ No aircraft available")
+        print(" No aircraft available")
         return
 
     # -------- GATE --------
@@ -228,7 +228,7 @@ def allocate_flight(flight):
         break
 
     if not selected_gate:
-        print("❌ No suitable gate available")
+        print(" No suitable gate available")
         return
 
     # -------- RUNWAY --------
@@ -267,7 +267,7 @@ def allocate_flight(flight):
         break
 
     if not selected_runway:
-        print("❌ No runway available")
+        print(" No runway available")
         return
 
     # -------- CREW --------
@@ -281,7 +281,7 @@ def allocate_flight(flight):
             break
 
     if len(selected_crew) < 2:
-        print("❌ Not enough crew")
+        print(" Not enough crew")
         return
 
     # -------- RESOURCES --------
@@ -295,7 +295,7 @@ def allocate_flight(flight):
             break
 
     if len(selected_res) < 2:
-        print("❌ Not enough resources")
+        print(" Not enough resources")
         return
 
     # -------- FINAL UPDATE (ONLY AFTER FULL SUCCESS) --------
@@ -304,7 +304,7 @@ def allocate_flight(flight):
     selected_runway.availability = "Occupied"
     selected_runway.assigned_flight = flight.fno
 
-    flight.aircraft = aircraft.aircraft_id   # ✅ IMPORTANT FIX
+    flight.aircraft = aircraft.aircraft_id   
 
     for c in selected_crew:
         c.status = "Assigned"
@@ -328,7 +328,7 @@ def allocate_flight(flight):
         [r.res_id for r in selected_res]
     )
 
-    print(f"✅ Flight {flight.fno} fully allocated")
+    print(f" Flight {flight.fno} fully allocated")
 
 def try_schedule_pending_flights():
 
@@ -355,7 +355,7 @@ def auto_allocate_gate():
 
     for flight in flights:
 
-        # ✅ skip already allocated flights
+        #  skip already allocated flights
         if flight.aircraft != "NA":
             continue
 
@@ -365,11 +365,11 @@ def allocate_aircraft(flight, aircraft_list, flights):
 
     for a in aircraft_list:
 
-        # ❌ skip aircraft under maintenance
+        #  skip aircraft under maintenance
         if a.maintenance == "Yes":
             continue
 
-        # ❌ skip if not at airport
+        #  skip if not at airport
         if a.location.lower() != "airport":
             continue
 
@@ -377,7 +377,7 @@ def allocate_aircraft(flight, aircraft_list, flights):
 
         for f in flights:
 
-            # ✅ FIX: skip same flight (self-conflict bug)
+            #  FIX: skip same flight (self-conflict bug)
             if f.fno == flight.fno:
                 continue
 
@@ -387,14 +387,14 @@ def allocate_aircraft(flight, aircraft_list, flights):
                 existing_arr = int(f.arr)
                 existing_dep = int(f.dep)
 
-                # ❌ overlap condition
+                #  overlap condition
                 if not (int(flight.dep) <= existing_arr or int(flight.arr) >= existing_dep):
                     conflict = True
                     break
 
-        # ✅ if no conflict → assign this aircraft
+        # if no conflict → assign this aircraft
         if not conflict:
             return a
 
-    # ❌ no aircraft found
+    # no aircraft found
     return None

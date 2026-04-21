@@ -72,45 +72,45 @@ def validate_passenger_booking(pid, name, flight, seat, passengers, seats_used_f
 
     # ---------------- EMPTY CHECK ----------------
     if pid.strip() == "" or name.strip() == "":
-        print("❌ Passenger ID and Name cannot be empty")
+        print(" Passenger ID and Name cannot be empty")
         return False
 
     # ---------------- FLIGHT CHECK ----------------
     if flight is None:
-        print("❌ Invalid flight selected")
+        print("- Invalid flight selected")
         return False
 
     # ---------------- FLIGHT ID CHECK ----------------
     if not hasattr(flight, "fno") or flight.fno.strip() == "":
-        print("❌ Flight data corrupted")
+        print("- Flight data corrupted")
         return False
 
     # ---------------- SEAT CHECK ----------------
     if seat.strip() == "":
-        print("❌ Seat number cannot be empty")
+        print("- Seat number cannot be empty")
         return False
 
     # ---------------- DUPLICATE BOOKING CHECK ----------------
     for p in passengers:
         if p.pid == pid and p.fno == flight.fno:
-            print("❌ Already booked this flight")
+            print("- Already booked this flight")
             return False
 
     # ---------------- SEAT ALREADY TAKEN ----------------
     for p in passengers:
         if p.fno == flight.fno and p.seat == seat:
-            print("❌ Seat already taken")
+            print("- Seat already taken")
             return False
 
     # ---------------- CAPACITY CHECK ----------------
     if not hasattr(flight, "capacity"):
-        print("❌ Flight capacity missing")
+        print("- Flight capacity missing")
         return False
 
     capacity = int(flight.capacity)
 
     if seats_used_func(flight.fno) >= capacity:
-        print("❌ Flight is full")
+        print("- Flight is full")
         return False
 
     return True

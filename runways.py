@@ -1,7 +1,7 @@
 # Class Runway to store info about runways
 
 from validation import validate_runway
-from constraint_checking import check_runway_constraints   # ✅ ADDED
+from constraint_checking import check_runway_constraints   
 
 
 class Runway:
@@ -140,7 +140,7 @@ def writeData():
 
             new_runway_added = True
 
-    print("✅ Runways added")
+    print(" Runways added")
 
     if new_runway_added:
         auto_allocate_runways()

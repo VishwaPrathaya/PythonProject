@@ -52,7 +52,7 @@ def writeData():
     print("Ground Resources Module")
 
     n = int(input("Enter number of resources: "))
-    existing = load_resources()   # ✅ load once
+    existing = load_resources()  
 
     with open("ground_resources.txt", "a") as file:
 

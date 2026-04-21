@@ -50,7 +50,7 @@ def optimized_allocation_flow():
             skipped += 1
             continue
 
-        print(f"\n🔄 Allocating Flight {f.fno}...")
+        print(f"\n Allocating Flight {f.fno}...")
         allocate_flight(f)
 
         from allocation_engine import load_allocations
@@ -61,5 +61,5 @@ def optimized_allocation_flow():
              allocated += 1
 
     print("\n=== OPTIMIZATION COMPLETE ===")
-    print(f"✅ Allocated: {allocated}")
-    print(f"⏭️ Skipped (already allocated): {skipped}")
+    print(f" Allocated: {allocated}")
+    #print(f"⏭ Skipped (already allocated): {skipped}")

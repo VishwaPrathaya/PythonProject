@@ -1,0 +1,3 @@
+P1,Vaidhehi,F101,F1,Economy,Booked
+P2,Reya,F101,E2,Economy,Booked
+P3,Vishwa,F101,B3,Economy,Booked

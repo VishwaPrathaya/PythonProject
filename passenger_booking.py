@@ -63,12 +63,12 @@ def book_flight():
         selected = next((f for f in matches if f.fno == fno), None)
 
     else:
-        print("❌ Invalid choice")
+        print(" Invalid choice")
         return
 
     # ---------------- FLIGHT VALIDATION ----------------
     if not selected:
-        print("❌ Flight not found")
+        print(" Flight not found")
         return
 
     # ---------------- PASSENGER INPUT ----------------
@@ -91,7 +91,7 @@ def book_flight():
     with open("passenger.txt", "a") as f:
         f.write(f"{pid},{name},{selected.fno},{seat},Economy,Booked\n")
 
-    print("✅ Booking successful")
+    print(" Booking successful")
 
     # ---------------- AUTO ALLOCATION TRIGGER ----------------
     allocate_passengers()

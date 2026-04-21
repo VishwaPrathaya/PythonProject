@@ -45,9 +45,10 @@ def main():
 
         # -------- PASSENGER --------
         elif ch == 3:
-            passenger.writeData()
+            from passenger_booking import book_flight
+            book_flight()
             passenger.display_passengers()
-            optimization.optimized_allocation_flow()
+            
 
         # -------- RUNWAY --------
         elif ch == 4:

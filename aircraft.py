@@ -69,4 +69,4 @@ def writeData():
 
             existing.append(Aircraft(aid, atype, location, maintenance, tat))
 
-    print("✅ Aircraft added")
+    print(" Aircraft added")

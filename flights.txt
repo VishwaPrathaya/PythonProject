@@ -1,1 +1,3 @@
 F101,Indigo,Chennai,Mumbai,900,1100,24-04-2026,NA,Domestic,70
+F401,Indigo,Chennai,Mumbai,900,1100,25-04-2026,NA,Domestic,100
+F402,Indigo,Chennai,Delhi,1000,1200,25-04-2026,NA,Domestic,100

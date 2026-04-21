@@ -64,7 +64,7 @@ def load_flights():
 
 
 
-def load_passengers():
+###def load_passengers():
 
     class Passenger:
         def __init__(self, pid, name, fno, seat, pclass="Economy", status="Booked"):
