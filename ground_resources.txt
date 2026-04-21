@@ -1,4 +1,4 @@
-R1,FuelTruck,In Use
-R2,BaggageCart,In Use
-R3,FuelTruck,In Use
-R4,BaggageCart,In Use
+R701,FuelTruck,In Use
+R702,BaggageCart,In Use
+R703,Catering,Available
+R704,Maintenance,Available

@@ -1,3 +1,5 @@
-F101,Indigo,Chennai,Mumbai,900,1100,24-04-2026,NA,Domestic,70
-F401,Indigo,Chennai,Mumbai,900,1100,25-04-2026,NA,Domestic,100
-F402,Indigo,Chennai,Delhi,1000,1200,25-04-2026,NA,Domestic,100
+F201,Indigo,Chennai,Delhi,0600,0830,25-04-2026,NA,Domestic,70
+F202,AirIndia,Chennai,Dubai,0900,1200,25-04-2026,NA,International,100
+F203,SpiceJet,Chennai,Bangalore,0700,0800,25-04-2026,NA,Domestic,100
+F204,Emirates,Chennai,Singapore,1100,1500,25-04-2026,NA,International,90
+F205,Vistara,Chennai,Mumbai,1300,1530,25-04-2026,NA,Domestic,100

@@ -1,3 +1,6 @@
-P1,Vaidhehi,F101,F1,Economy,Booked
-P2,Reya,F101,E2,Economy,Booked
-P3,Vishwa,F101,B3,Economy,Booked
+P501,Ravi,F201,28,Economy,Booked
+P502,Anita,F201,32,Economy,Booked
+P503,John,F202,45,Economy,Booked
+P504,Sara,F202,38,Economy,Booked
+P505,Kiran,F203,22,Economy,Booked
+P506,Aisha,F204,35,Economy,Booked

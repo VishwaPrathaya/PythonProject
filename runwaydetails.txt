@@ -1,2 +1,3 @@
-3000,Occupied,F101,R1,Both,No,NA,NA
-3000,Occupied,F401,R2,Both,No,NA,NA
+3500,Occupied,F201,RW1,Landing,No,NA,NA
+4000,Free,NA,RW2,Takeoff,No,NA,NA
+3000,Free,NA,RW3,Landing,Yes,1000,1100
