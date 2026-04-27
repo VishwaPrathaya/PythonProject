@@ -1,5 +1,3 @@
-from data_loader import load_flights
-
 class Passenger:
 
     def __init__(self, pid, name, fno, seat, ticket_class="Economy", status="Booked"):
@@ -17,7 +15,7 @@ def load_passengers():
     lst = []
 
     try:
-        with open("passenger.txt") as f:
+        with open("passenger.csv") as f:
             for line in f:
                 data = line.strip().split(",")
 
@@ -42,10 +40,138 @@ def display_passengers():
 
     print("\n--- PASSENGERS ---")
     for p in passengers:
-        print(f"{p.pid} | {p.name} | {p.fno} | {p.seat}")
+        print(f"{p.pid} | {p.name} | {p.fno} | {p.seat} | {p.ticket_class} | {p.status}")
 
 
 # ---------------- SEAT COUNT ----------------
 def seats_used(fno):
-
     return sum(1 for p in load_passengers() if p.fno == fno)
+
+
+# ---------------- WRITE ----------------
+def writeData():
+
+    from flights import load_flights
+    from validation import validate_passenger_booking
+    from passenger_allocation import allocate_passengers
+
+    n = int(input("Passenger count: "))
+    existing = load_passengers()
+    flights = load_flights()
+
+    new_added = False
+
+    with open("passenger.csv", "a") as f:
+
+        for _ in range(n):
+
+            pid = input("Passenger ID: ")
+            name = input("Name: ")
+            fno = input("Flight No: ")
+            seat = input("Seat No: ")
+            ticket_class = input("Class (Economy/Business/First): ")
+            status = input("Status (Booked/Checked-In/Boarded): ")
+
+            selected = next((fl for fl in flights if fl.fno == fno), None)
+
+            if not validate_passenger_booking(pid, name, selected, seat, existing, seats_used):
+                continue
+
+            f.write(",".join([pid, name, fno, seat, ticket_class, status]) + "\n")
+
+            existing.append(Passenger(pid, name, fno, seat, ticket_class, status))
+            new_added = True
+
+            print("✅ Passenger added")
+
+    # 🔥 TRIGGER (same pattern)
+    if new_added:
+        print("🔄 Passenger data updated → updating flight status")
+        allocate_passengers()
+
+
+# ---------------- REMOVE ----------------
+def remove_passenger():
+
+    pid = input("Enter Passenger ID to remove: ")
+
+    passengers = load_passengers()
+    updated = []
+
+    found = False
+
+    for p in passengers:
+        if p.pid == pid:
+            found = True
+            print(f"⚠️ Removing passenger {p.name} from Flight {p.fno}")
+            continue
+        updated.append(p)
+
+    if not found:
+        print("❌ Passenger not found")
+        return
+
+    # 🔹 SAVE FILE
+    with open("passenger.csv", "w") as f:
+        for p in updated:
+            f.write(",".join([
+                p.pid, p.name, p.fno,
+                p.seat, p.ticket_class, p.status
+            ]) + "\n")
+
+    print("✅ Passenger removed successfully")
+
+    # 🔥 TRIGGER
+    print("🔄 Updating flight passenger status...")
+    from passenger_allocation import allocate_passengers
+    allocate_passengers()
+
+
+# ---------------- UPDATE ----------------
+def update_passenger():
+
+    passengers = load_passengers()
+
+    if not passengers:
+        print("No passengers available")
+        return
+
+    pid = input("Enter Passenger ID to update: ")
+
+    target = next((p for p in passengers if p.pid == pid), None)
+
+    if not target:
+        print("Passenger not found")
+        return
+
+    print(f"\nCurrent: {target.pid} | {target.name} | {target.fno} | {target.seat} | {target.status}")
+    print("Leave blank to keep current value\n")
+
+    name = input(f"Name [{target.name}]: ").strip()
+    seat = input(f"Seat [{target.seat}]: ").strip()
+    status = input(f"Status [{target.status}]: ").strip()
+
+    # 🔹 APPLY CHANGES
+    if name:
+        target.name = name
+
+    if seat:
+        target.seat = seat
+
+    if status:
+        target.status = status
+
+    # 🔹 SAVE FILE
+    with open("passenger.csv", "w") as f:
+        for p in passengers:
+            f.write(",".join([
+                p.pid, p.name, p.fno,
+                p.seat, p.ticket_class, p.status
+            ]) + "\n")
+
+    print(f"✅ Passenger {pid} updated successfully")
+
+    # 🔥 TRIGGER (important)
+    print("🔄 Updating flight passenger status...")
+    from passenger_allocation import allocate_passengers
+    allocate_passengers()

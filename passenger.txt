@@ -1,6 +1,0 @@
-P501,Ravi,F201,28,Economy,Booked
-P502,Anita,F201,32,Economy,Booked
-P503,John,F202,45,Economy,Booked
-P504,Sara,F202,38,Economy,Booked
-P505,Kiran,F203,22,Economy,Booked
-P506,Aisha,F204,35,Economy,Booked

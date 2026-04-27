@@ -1,5 +1,0 @@
-A301,Wide,Airport,No,180
-A302,Narrow,Other,No,60
-A303,Narrow,Airport,No,120
-A304,Wide,Other,No,120
-A305,Narrow,Airport,Yes,100

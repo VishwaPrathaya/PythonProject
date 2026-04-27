@@ -3,7 +3,8 @@ from gates import load_gates
 from runways import load_runways
 from crew import load_crew
 from ground_resources import load_resources
-from data_loader import load_flights
+
+
 
 # ---------------- LOAD EXISTING ALLOCATIONS ----------------
 def load_allocations():
@@ -11,28 +12,40 @@ def load_allocations():
     alloc = {}
 
     try:
-        with open("flight_allocations.txt") as f:
+        with open("flight_allocations.csv") as f:
             for line in f:
                 data = line.strip().split(",")
-                alloc[data[0]] = data
-    except:
+                if len(data) >= 4:
+                    alloc[data[0]] = data
+    except FileNotFoundError:
         pass
+    except Exception as e:
+        print(f"Error loading allocations: {e}")
 
     return alloc
 
 
-# ---------------- SAVE ----------------
+# ---------------- SAVE ALLOCATION ----------------
 def save_allocation(fno, aircraft, gate, runway, crew_ids, resources):
 
-    with open("flight_allocations.txt", "a") as f:
+    with open("flight_allocations.csv", "a") as f:
         f.write(
             f"{fno},{aircraft},{gate},{runway},{'|'.join(crew_ids)},{'|'.join(resources)}\n"
         )
 
 
 # ---------------- UPDATE FILE HELPERS ----------------
+def update_flight_file(flights):
+    with open("flights.csv", "w") as f:
+        for fl in flights:
+            f.write(",".join([
+                fl.fno, fl.airline, fl.origin, fl.destination,
+                fl.arr, fl.dep, fl.date, fl.aircraft, fl.flight_type, str(fl.capacity)
+            ]) + "\n")
+
+
 def update_gate_file(gates):
-    with open("gates.txt", "w") as f:
+    with open("gates.csv", "w") as f:
         for g in gates:
             f.write(",".join([
                 g.gate_id, g.terminal,
@@ -42,7 +55,7 @@ def update_gate_file(gates):
 
 
 def update_runway_file(runways):
-    with open("runwaydetails.txt", "w") as f:
+    with open("runwaydetails.csv", "w") as f:
         for r in runways:
             f.write(",".join([
                 str(r.length), r.availability,
@@ -53,7 +66,7 @@ def update_runway_file(runways):
 
 
 def update_crew_file(crew_list):
-    with open("crew.txt", "w") as f:
+    with open("crew.csv", "w") as f:
         for c in crew_list:
             f.write(",".join([
                 c.crew_id, c.name, c.role,
@@ -64,7 +77,7 @@ def update_crew_file(crew_list):
 
 
 def update_resource_file(resources):
-    with open("ground_resources.txt", "w") as f:
+    with open("ground_resources.csv", "w") as f:
         for r in resources:
             f.write(",".join([
                 r.res_id, r.res_type, r.status
@@ -85,6 +98,7 @@ def get_available_aircraft(flight, aircraft_list, flights):
         conflict = False
 
         for f in flights:
+
             if f.fno == flight.fno:
                 continue
 
@@ -103,94 +117,11 @@ def get_available_aircraft(flight, aircraft_list, flights):
     return None
 
 
-# ---------------- GATE (GREEDY) ----------------
-def get_available_gate(flight, gates):
-
-    for g in gates:
-
-        if g.availability != "Free":
-            continue
-
-        # aircraft size check
-        if g.max_aircraft_size != flight.aircraft_type:
-            continue
-
-        # international restriction
-        if flight.flight_type == "International" and g.gate_type != "International":
-            continue
-
-        return g
-
-    return None
-
-
-# ---------------- RUNWAY (FIRST-FIT) ----------------
-def get_available_runway(runways):
-
-    for r in runways:
-
-        if r.availability != "Free":
-            continue
-
-        if r.maintenance_window == "Yes":
-            continue
-
-        return r
-
-    return None
-
-
-# ---------------- CREW (CSP LIGHT) ----------------
-def get_available_crew(crew_list, aircraft_type):
-
-    valid = [
-        c for c in crew_list
-        if c.status == "Available" and c.aircraft_type == aircraft_type
-    ]
-
-    if len(valid) >= 2:
-        return valid[:2]
-
-    return None
-
-
-# ---------------- RESOURCE (GREEDY) ----------------
-def get_available_resources(resources):
-
-    available = [r for r in resources if r.status == "Available"]
-
-    if len(available) >= 2:
-        return available[:2]
-
-    return None
-
-# ---------------- MAIN ALLOCATION ENGINE ----------------
-def allocate_flight(flight):
-
-    allocations = load_allocations()
-
-    if flight.fno in allocations:
-        print(" Already allocated")
-        return
-
-    aircraft_list = load_aircraft()
-    gates = load_gates()
-    runways = load_runways()
-    crew_list = load_crew()
-    resources = load_resources()
-    flights = load_flights()
+# ---------------- GATE (GREEDY + TIME CHECK) ----------------
+def get_available_gate(flight, gates, allocations, flights, aircraft):
 
     new_arr = int(flight.arr)
     new_dep = int(flight.dep)
-
-    # -------- AIRCRAFT --------
-    aircraft = get_available_aircraft(flight, aircraft_list, flights)
-    if not aircraft:
-        print(" No aircraft available")
-        return
-
-    # -------- GATE --------
-    selected_gate = None
 
     for g in gates:
 
@@ -200,7 +131,8 @@ def allocate_flight(flight):
         if g.max_aircraft_size != aircraft.atype:
             continue
 
-        if getattr(flight, "flight_type", getattr(flight, "ftype", "Domestic")) == "International" and g.gate_type != "International":
+        flight_type = flight.flight_type
+        if flight_type == "International" and g.gate_type != "International":
             continue
 
         conflict = False
@@ -224,15 +156,16 @@ def allocate_flight(flight):
         if conflict:
             continue
 
-        selected_gate = g
-        break
+        return g
 
-    if not selected_gate:
-        print(" No suitable gate available")
-        return
+    return None
 
-    # -------- RUNWAY --------
-    selected_runway = None
+
+# ---------------- RUNWAY (FIRST-FIT + TIME CHECK) ----------------
+def get_available_runway(flight, runways, allocations, flights):
+
+    new_arr = int(flight.arr)
+    new_dep = int(flight.dep)
 
     for r in runways:
 
@@ -263,39 +196,112 @@ def allocate_flight(flight):
         if conflict:
             continue
 
-        selected_runway = r
-        break
+        return r
 
+    return None
+
+
+# ---------------- CREW (CSP LIGHT) ----------------
+def get_available_crew(crew_list, aircraft_type):
+
+    valid = [
+        c for c in crew_list
+        if c.status == "Available" and c.aircraft_type == aircraft_type
+    ]
+
+    if len(valid) >= 2:
+        return valid[:2]
+
+    return None
+
+
+# ---------------- RESOURCE (GREEDY) ----------------
+def get_available_resources(resources, allocations, interactive=False):
+
+    selected = []
+
+    for r in resources:
+
+        # ✅ CASE 1: Available → take directly
+        if r.status == "Available":
+            selected.append(r)
+
+        # ⚠️ CASE 2: In Use → ask user (only if interactive mode ON)
+        elif r.status == "In Use" and interactive:
+
+            used_by = None
+
+            # 🔍 find which flight is using this resource
+            for fno, data in allocations.items():
+                if len(data) > 5 and r.res_id in data[5].split("|"):
+                    used_by = fno
+                    break
+
+            print(f"⚠️ Resource {r.res_id} is currently used by Flight {used_by}")
+
+            choice = input("Do you want to reassign it? (yes/no): ")
+
+            if choice.lower() == "yes":
+
+                from allocation_engine import remove_allocation_for_flight
+                remove_allocation_for_flight(used_by)
+
+                selected.append(r)
+
+        # stop when enough resources collected
+        if len(selected) == 2:
+            break
+
+    if len(selected) < 2:
+        return None
+
+    return selected
+
+
+# ---------------- MAIN ALLOCATION ENGINE ----------------
+def allocate_flight(flight):
+    from flights import load_flights
+    allocations = load_allocations()
+
+    if flight.fno in allocations:
+        print(f"⚠️  Flight {flight.fno} already allocated")
+        return
+
+    aircraft_list = load_aircraft()
+    gates = load_gates()
+    runways = load_runways()
+    crew_list = load_crew()
+    resources = load_resources()
+    flights = load_flights()
+
+    # -------- AIRCRAFT --------
+    aircraft = get_available_aircraft(flight, aircraft_list, flights)
+    if not aircraft:
+        print(f"❌ No aircraft available for flight {flight.fno}")
+        return
+
+    # -------- GATE --------
+    selected_gate = get_available_gate(flight, gates, allocations, flights, aircraft)
+    if not selected_gate:
+        print(f"❌ No suitable gate available for flight {flight.fno}")
+        return
+
+    # -------- RUNWAY --------
+    selected_runway = get_available_runway(flight, runways, allocations, flights)
     if not selected_runway:
-        print(" No runway available")
+        print(f"❌ No runway available for flight {flight.fno}")
         return
 
     # -------- CREW --------
-    selected_crew = []
-
-    for c in crew_list:
-        if c.status == "Available" and c.aircraft_type == aircraft.atype:
-            selected_crew.append(c)
-
-        if len(selected_crew) == 2:
-            break
-
-    if len(selected_crew) < 2:
-        print(" Not enough crew")
+    selected_crew = get_available_crew(crew_list, aircraft.atype)
+    if not selected_crew:
+        print(f"❌ Not enough crew for flight {flight.fno}")
         return
 
     # -------- RESOURCES --------
-    selected_res = []
-
-    for r in resources:
-        if r.status == "Available":
-            selected_res.append(r)
-
-        if len(selected_res) == 2:
-            break
-
-    if len(selected_res) < 2:
-        print(" Not enough resources")
+    selected_res = get_available_resources(resources, allocations, interactive=False)
+    if not selected_res:
+        print(f"❌ Not enough resources for flight {flight.fno}")
         return
 
     # -------- FINAL UPDATE (ONLY AFTER FULL SUCCESS) --------
@@ -304,8 +310,6 @@ def allocate_flight(flight):
     selected_runway.availability = "Occupied"
     selected_runway.assigned_flight = flight.fno
 
-    flight.aircraft = aircraft.aircraft_id   
-
     for c in selected_crew:
         c.status = "Assigned"
         c.flight_no = flight.fno
@@ -313,7 +317,15 @@ def allocate_flight(flight):
     for r in selected_res:
         r.status = "In Use"
 
-    # -------- SAVE TO FILES --------
+    # update aircraft field on flight object and persist to file
+    flight.aircraft = aircraft.aircraft_id
+    for fl in flights:
+        if fl.fno == flight.fno:
+            fl.aircraft = aircraft.aircraft_id
+            break
+    update_flight_file(flights)
+
+    # -------- SAVE ALL FILES --------
     update_gate_file(gates)
     update_runway_file(runways)
     update_crew_file(crew_list)
@@ -328,73 +340,93 @@ def allocate_flight(flight):
         [r.res_id for r in selected_res]
     )
 
-    print(f" Flight {flight.fno} fully allocated")
+    print(f"✅ Flight {flight.fno} fully allocated")
+    print(f"   Aircraft : {aircraft.aircraft_id}")
+    print(f"   Gate     : {selected_gate.gate_id}")
+    print(f"   Runway   : {selected_runway.runway_id}")
+    print(f"   Crew     : {[c.crew_id for c in selected_crew]}")
+    print(f"   Resources: {[r.res_id for r in selected_res]}")
 
+    print("⚠️ Trigger: Allocation successful → System state updated")
+
+
+# ---------------- SCHEDULE PENDING FLIGHTS ----------------
 def try_schedule_pending_flights():
-
+    from flights import load_flights
     flights = load_flights()
-    aircraft_list = load_aircraft()
+
+    pending = [f for f in flights if f.aircraft == "NA"]
+
+    if not pending:
+        print("No pending flights to allocate")
+        return
+
+    print(f"\n🔄 Found {len(pending)} pending flight(s). Attempting allocation...")
+
+    for flight in pending:
+        allocate_flight(flight)
+
+
+def remove_allocation_for_flight(fno):
+
+    allocations = load_allocations()
+
+    if fno not in allocations:
+        print("No allocation found for this flight")
+        return
+
+    data = allocations[fno]
+
+    gate_id = data[2]
+    runway_id = data[3]
+    crew_ids = data[4].split("|") if len(data) > 4 else []
+    res_ids = data[5].split("|") if len(data) > 5 else []
+
     gates = load_gates()
     runways = load_runways()
     crew_list = load_crew()
     resources = load_resources()
 
-    for flight in flights:
+    # FREE GATE
+    for g in gates:
+        if g.gate_id == gate_id:
+            g.availability = "Free"
 
-        # skip already allocated
-        if flight.aircraft != "NA":
-            continue
+    # FREE RUNWAY
+    for r in runways:
+        if r.runway_id == runway_id:
+            r.availability = "Free"
+            r.assigned_flight = "NA"
 
-        allocate_flight(flight)
+    # FREE CREW
+    for c in crew_list:
+        if c.crew_id in crew_ids:
+            c.status = "Available"
+            c.flight_no = "NA"
 
-def auto_allocate_gate():
+    # FREE RESOURCES
+    for r in resources:
+        if r.res_id in res_ids:
+            r.status = "Available"
 
-    from data_loader import load_flights
+    # UPDATE FILES
+    update_gate_file(gates)
+    update_runway_file(runways)
+    update_crew_file(crew_list)
+    update_resource_file(resources)
 
-    flights = load_flights()
+    # REMOVE FROM FILE
+    with open("flight_allocations.csv", "r") as f:
+        lines = f.readlines()
 
-    for flight in flights:
+    with open("flight_allocations.csv", "w") as f:
+        for line in lines:
+            if not line.startswith(fno + ","):
+                f.write(line)
 
-        #  skip already allocated flights
-        if flight.aircraft != "NA":
-            continue
+    print(f"♻️ Allocation for flight {fno} removed")
 
-        allocate_flight(flight)
+    print("⚠️ Trigger: Resources released → Reallocation triggered")
 
-def allocate_aircraft(flight, aircraft_list, flights):
-
-    for a in aircraft_list:
-
-        #  skip aircraft under maintenance
-        if a.maintenance == "Yes":
-            continue
-
-        #  skip if not at airport
-        if a.location.lower() != "airport":
-            continue
-
-        conflict = False
-
-        for f in flights:
-
-            #  FIX: skip same flight (self-conflict bug)
-            if f.fno == flight.fno:
-                continue
-
-            # check if same aircraft is used
-            if f.aircraft == a.aircraft_id:
-
-                existing_arr = int(f.arr)
-                existing_dep = int(f.dep)
-
-                #  overlap condition
-                if not (int(flight.dep) <= existing_arr or int(flight.arr) >= existing_dep):
-                    conflict = True
-                    break
-
-        # if no conflict → assign this aircraft
-        if not conflict:
-            return a
-
-    # no aircraft found
-    return None
+   
+    try_schedule_pending_flights()

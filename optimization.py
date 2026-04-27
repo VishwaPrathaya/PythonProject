@@ -1,5 +1,5 @@
 from allocation_engine import allocate_flight
-from data_loader import load_flights
+from flights import load_flights
 
 
 # ---------------- PRIORITY RULE ----------------
@@ -8,7 +8,7 @@ def flight_priority(f):
     score = 0
 
     # International flights → higher priority
-    if getattr(f, "flight_type", "Domestic") == "International":
+    if f.flight_type == "International":
         score += 100
 
     # Earlier arrival → higher priority

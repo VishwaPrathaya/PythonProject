@@ -1,4 +1,0 @@
-C601,Trinisha,Pilot,NA,Morning,Narrow,Available,8,12
-C602,Gokul,Co-Pilot,F201,Morning,Wide,Assigned,7,10
-C603,Sruthi,Cabin Crew,F201,Morning,Wide,Assigned,8,12
-C604,Vaidhehi,Pilot,NA,Night,Wide,Available,9,7

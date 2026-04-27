@@ -1,4 +1,4 @@
-def search_flights(flights, origin=None, destination=None, time=None):
+def search_flights(flights, origin=None, destination=None, time_from=None, time_to=None):
 
     results = []
 
@@ -10,8 +10,10 @@ def search_flights(flights, origin=None, destination=None, time=None):
         if destination and f.destination != destination:
             continue
 
-        if time:
-            if f.arr != time and f.dep != time:
+        # ✅ Time range filter (ONLY if provided)
+        if time_from is not None and time_to is not None:
+            if not (time_from <= int(f.arr) <= time_to or
+                    time_from <= int(f.dep) <= time_to):
                 continue
 
         results.append(f)

@@ -1,4 +1,0 @@
-R701,FuelTruck,In Use
-R702,BaggageCart,In Use
-R703,Catering,Available
-R704,Maintenance,Available

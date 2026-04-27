@@ -1,4 +1,4 @@
-from data_loader import load_flights
+from flights import load_flights
 from passenger import load_passengers
 
 
@@ -13,5 +13,11 @@ def allocate_passengers():
 
         if booked:
             f.status = "ACTIVE"
+        else:
+            f.status = "EMPTY"
 
-    print("Passenger allocation updated")
+    # 🔹 SAVE BACK TO FILE
+    from allocation_engine import update_flight_file
+    update_flight_file(flights)
+
+    print("✅ Passenger allocation updated")

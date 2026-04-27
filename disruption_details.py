@@ -1,7 +1,6 @@
 # Class Disruption to store disruption details
 
 from validation import validate_disruption
-from constraint_checking import check_disruption_constraints 
 
 
 class Disruption:
@@ -21,13 +20,13 @@ class Disruption:
               "| Status:", self.status)
 
 
-# Load data from disruption.txt
+# ---------------- LOAD ----------------
 def load_disruptions():
 
     disruption_list = []
 
     try:
-        with open("disruption.txt", "r") as f:
+        with open("disruption.csv", "r") as f:
             for line in f:
                 data = line.strip().split(",")
 
@@ -35,21 +34,20 @@ def load_disruptions():
                     print("Invalid disruption data:", line)
                     continue
 
-                d = Disruption(*data)
-                disruption_list.append(d)
+                disruption_list.append(Disruption(*data))
 
     except FileNotFoundError:
-        print("disruption.txt not found. It will be created when data is added.")
+        pass
 
     return disruption_list
 
 
-# Display disruptions
+# ---------------- DISPLAY ----------------
 def display_disruptions():
 
     disruption_list = load_disruptions()
 
-    if len(disruption_list) == 0:
+    if not disruption_list:
         print("\nNo disruption data available.")
         return
 
@@ -59,15 +57,59 @@ def display_disruptions():
         d.display()
 
 
+# ---------------- REMOVE ----------------
+def remove_disruption():
 
-# Write data to file
+    disruptions = load_disruptions()
+
+    if not disruptions:
+        print("No disruptions to remove")
+        return
+
+    did = input("Enter Disruption ID to remove: ")
+
+    updated = []
+    target = None
+
+    for d in disruptions:
+        if d.disruption_id == did:
+            target = d
+        else:
+            updated.append(d)
+
+    if not target:
+        print("Disruption not found")
+        return
+
+    # 🔥 SYSTEM RESPONSE (ONLY IF ACTIVE)
+    if target.status == "Pending":
+        print("🔄 Active disruption removed → restoring system")
+
+        from allocation_engine import try_schedule_pending_flights
+        try_schedule_pending_flights()
+
+    # 🔹 SAVE FILE
+    with open("disruption.csv", "w") as f:
+        for d in updated:
+            f.write(",".join([
+                d.disruption_id,
+                d.flight_no,
+                d.disruption_type,
+                d.status,
+                d.priority
+            ]) + "\n")
+
+    print("✅ Disruption removed successfully")
+
+
+# ---------------- WRITE ----------------
 def writeData():
 
     print("Airport Operations Management System - Disruption Module")
 
     n = int(input("Enter number of disruptions to add: "))
 
-    with open("disruption.txt", "a") as file:
+    with open("disruption.csv", "a") as file:
 
         for i in range(n):
 
@@ -93,24 +135,114 @@ def writeData():
                 disruption_type, status, priority
             ]) + "\n")
 
-            
+            # 🔥 TRIGGER (VERY IMPORTANT FOR SYSTEM + VIVA)
             if disruption_type == "Cancellation":
-                print(" Trigger: Release aircraft, crew, gate, runway")
+                print("⚠️ Trigger: Release aircraft, crew, gate, runway")
 
                 from allocation_engine import handle_cancellation
                 handle_cancellation(flight_no)
 
             elif disruption_type == "Delay":
-                print("- Trigger: Reschedule flight")
+                print("⚠️ Trigger: Reschedule flight")
 
                 from allocation_engine import handle_delay
                 handle_delay(flight_no)
 
             elif disruption_type in ["Technical", "Weather"]:
-                print(" Trigger: Re-optimization required")
+                print("⚠️ Trigger: System re-optimization")
 
                 from optimization import optimized_allocation_flow
                 optimized_allocation_flow()
 
     print("\nDisruption details added successfully!")
     display_disruptions()
+
+
+# ---------------- UPDATE ----------------
+def update_disruption():
+
+    disruptions = load_disruptions()
+
+    if not disruptions:
+        print("No disruptions available")
+        return
+
+    did = input("Enter Disruption ID to update: ")
+
+    target = next((d for d in disruptions if d.disruption_id == did), None)
+
+    if not target:
+        print("Disruption not found")
+        return
+
+    print(f"\nCurrent: {target.disruption_id} | {target.flight_no} | {target.disruption_type} | {target.status}")
+    print("Leave blank to keep current value\n")
+
+    dtype = input(f"Type [{target.disruption_type}]: ").strip()
+    status = input(f"Status [{target.status}]: ").strip()
+    priority = input(f"Priority [{target.priority}]: ").strip()
+
+    old_status = target.status
+
+    if dtype:
+        target.disruption_type = dtype
+
+    if status:
+        target.status = status
+
+    if priority:
+        target.priority = priority
+
+    # 🔹 SAVE FILE
+    with open("disruption.csv", "w") as f:
+        for d in disruptions:
+            f.write(",".join([
+                d.disruption_id,
+                d.flight_no,
+                d.disruption_type,
+                d.status,
+                d.priority
+            ]) + "\n")
+
+    print(f"✅ Disruption {did} updated successfully")
+
+    # 🔥 SYSTEM RESPONSE
+    _handle_disruption_update(target, old_status)
+
+
+# ---------------- SYSTEM HANDLER ----------------
+def _handle_disruption_update(disruption, old_status):
+
+    fno = disruption.flight_no
+
+    # ✅ CASE 1: RESOLVED → restore system
+    if disruption.status == "Resolved" and old_status != "Resolved":
+
+        print("🔄 Disruption resolved → reallocating flights")
+
+        from allocation_engine import try_schedule_pending_flights
+        try_schedule_pending_flights()
+
+    # ✅ CASE 2: PENDING → apply disruption again
+    elif disruption.status == "Pending":
+
+        if disruption.disruption_type == "Cancellation":
+
+            print("⚠️ Applying cancellation")
+
+            from allocation_engine import handle_cancellation
+            handle_cancellation(fno)
+
+        elif disruption.disruption_type == "Delay":
+
+            print("⏳ Applying delay")
+
+            from allocation_engine import handle_delay
+            handle_delay(fno)
+
+        elif disruption.disruption_type in ["Technical", "Weather"]:
+
+            print("🔄 Re-optimizing system")
+
+            from optimization import optimized_allocation_flow
+            optimized_allocation_flow()

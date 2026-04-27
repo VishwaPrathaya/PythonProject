@@ -1,9 +1,32 @@
-from data_loader import load_flights
-from passenger import load_passengers
+from flights import load_flights
+from passenger import load_passengers, seats_used
 from validation import validate_passenger_booking
 from passenger_allocation import allocate_passengers
-from passenger_search import search_flights   # assuming you have this
-from passenger import seats_used   # add seats_used here
+from passenger_search import search_flights
+
+
+# ---------------- VIEW SCHEDULED FLIGHTS (TIME RANGE) ----------------
+def view_scheduled_flights():
+
+    flights = load_flights()
+
+    print("\n=== VIEW SCHEDULED FLIGHTS ===")
+    start = input("From time: ")
+    end = input("To time: ")
+
+    if not start.isdigit() or not end.isdigit():
+        print("❌ Invalid time range")
+        return
+
+    matches = search_flights(flights, time_from=int(start), time_to=int(end))
+
+    if not matches:
+        print("No flights scheduled in this time range")
+        return
+
+    print(f"\n--- Flights from {start} to {end} ---")
+    for f in matches:
+        print(f"{f.fno} | {f.origin} → {f.destination} | Arr: {f.arr} | Dep: {f.dep} | {f.flight_type}")
 
 
 # ---------------- BOOK FLIGHT ----------------
@@ -14,61 +37,61 @@ def book_flight():
 
     print("\n=== BOOK FLIGHT ===")
     print("1. By Flight ID")
-    print("2. By Route (Origin-Destination)")
-    print("3. By Time")
+    print("2. By Origin, Destination and Time Range")
 
     choice = input("Select option: ")
 
     selected = None
 
-    # ---------------- OPTION 1 ----------------
+    # ---------------- OPTION 1: BY FLIGHT ID ----------------
     if choice == "1":
 
         fno = input("Enter Flight ID: ")
         selected = next((f for f in flights if f.fno == fno), None)
 
-    # ---------------- OPTION 2 ----------------
+        if not selected:
+            print("❌ Flight not found")
+            return
+
+        print(f"\n{selected.fno} | {selected.origin} → {selected.destination} | Arr: {selected.arr} | Dep: {selected.dep} | {selected.flight_type}")
+
+    # ---------------- OPTION 2: BY ROUTE + TIME RANGE ----------------
     elif choice == "2":
 
         origin = input("Origin: ")
         destination = input("Destination: ")
+        start = input("From time: ")
+        end = input("To time: ")
 
-        matches = search_flights(flights, origin=origin, destination=destination)
-
-        if not matches:
-            print("No flights found for route")
+        if not start.isdigit() or not end.isdigit():
+            print("❌ Invalid time range")
             return
 
-        for f in matches:
-            print(f"{f.fno} | {f.origin} → {f.destination} | {f.arr}-{f.dep}")
-
-        fno = input("Choose Flight ID: ")
-        selected = next((f for f in matches if f.fno == fno), None)
-
-    # ---------------- OPTION 3 ----------------
-    elif choice == "3":
-
-        time = input("Enter Time: ")
-
-        matches = search_flights(flights, time=time)
+        matches = search_flights(
+            flights,
+            origin=origin,
+            destination=destination,
+            time_from=int(start),
+            time_to=int(end)
+        )
 
         if not matches:
-            print("No flights found for time")
+            print("No flights found for this route and time range")
             return
 
+        print("\nAvailable flights:")
         for f in matches:
-            print(f"{f.fno} | {f.origin} → {f.destination} | {f.arr}-{f.dep}")
+            print(f"{f.fno} | {f.origin} → {f.destination} | Arr: {f.arr} | Dep: {f.dep} | {f.flight_type}")
 
-        fno = input("Choose Flight ID: ")
+        fno = input("\nChoose Flight ID: ")
         selected = next((f for f in matches if f.fno == fno), None)
+
+        if not selected:
+            print("❌ Flight not found")
+            return
 
     else:
-        print(" Invalid choice")
-        return
-
-    # ---------------- FLIGHT VALIDATION ----------------
-    if not selected:
-        print(" Flight not found")
+        print("❌ Invalid choice")
         return
 
     # ---------------- PASSENGER INPUT ----------------
@@ -76,22 +99,33 @@ def book_flight():
     name = input("Name: ")
     seat = input("Seat No: ")
 
-    # ---------------- VALIDATION CALL ----------------
-    if not validate_passenger_booking(
-    pid,
-    name,
-    selected,
-    seat,
-    passengers,
-    seats_used   # ← fixed
-    ):
+    print("\nTicket Class:")
+    print("1. Economy")
+    print("2. Business")
+    print("3. First")
+    cls_choice = input("Choose: ")
+
+    if cls_choice == "1":
+        ticket_class = "Economy"
+    elif cls_choice == "2":
+        ticket_class = "Business"
+    elif cls_choice == "3":
+        ticket_class = "First"
+    else:
+        print("Invalid choice, defaulting to Economy")
+        ticket_class = "Economy"
+
+    # ---------------- VALIDATION ----------------
+    if not validate_passenger_booking(pid, name, selected, seat, passengers, seats_used):
         return
 
     # ---------------- SAVE BOOKING ----------------
-    with open("passenger.txt", "a") as f:
-        f.write(f"{pid},{name},{selected.fno},{seat},Economy,Booked\n")
+    with open("passenger.csv", "a") as f:
+        f.write(f"{pid},{name},{selected.fno},{seat},{ticket_class},Booked\n")
 
-    print(" Booking successful")
+    print(f"✅ Booking successful — {ticket_class} class")
+    print(f"   Flight : {selected.fno} | {selected.origin} → {selected.destination}")
+    print(f"   Seat   : {seat}")
 
     # ---------------- AUTO ALLOCATION TRIGGER ----------------
     allocate_passengers()

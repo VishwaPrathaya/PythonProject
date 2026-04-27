@@ -20,7 +20,7 @@ class Crew:
 def load_crew():
     lst = []
     try:
-        with open("crew.txt") as f:
+        with open("crew.csv") as f:
             for line in f:
                 data = line.strip().split(",")
                 if len(data) == 9:
@@ -52,7 +52,7 @@ def writeData():
     n = int(input("Crew count: "))
     records = load_crew()   # optional for duplicate check
 
-    with open("crew.txt", "a") as f:
+    with open("crew.csv", "a") as f:
 
         for _ in range(n):
 
@@ -90,3 +90,143 @@ def writeData():
                 cid, name, role, fno, shift,
                 atype, status, duty, rest
             ))
+
+
+def remove_crew():
+
+    crew_list = load_crew()
+
+    if not crew_list:
+        print("No crew available")
+        return
+
+    cid = input("Enter Crew ID to remove: ")
+
+    # 🔹 check existence
+    found = False
+    for c in crew_list:
+        if c.crew_id == cid:
+            found = True
+            break
+
+    if not found:
+        print("Crew not found")
+        return
+
+    # 🔹 check allocation file
+    try:
+        with open("flight_allocations.csv") as f:
+            for line in f:
+                data = line.strip().split(",")
+
+                if len(data) >= 5:
+                    crew_ids = data[4].split("|")
+
+                    if cid in crew_ids:
+                        print("❌ Cannot remove: Crew is assigned to a flight")
+                        return
+    except:
+        pass
+
+    # 🔹 remove crew
+    updated = [c for c in crew_list if c.crew_id != cid]
+
+    with open("crew.csv", "w") as f:
+        for c in updated:
+            f.write(",".join([
+                c.crew_id, c.name, c.role,
+                c.flight_no, c.shift,
+                c.aircraft_type, c.status,
+                c.duty_hours, c.rest_hours
+            ]) + "\n")
+
+    print("✅ Crew removed successfully")
+
+# ---------------- UPDATE ----------------
+def update_crew():
+
+    crew_list = load_crew()
+
+    if not crew_list:
+        print("No crew available")
+        return
+
+    cid = input("Enter Crew ID to update: ")
+
+    target = next((c for c in crew_list if c.crew_id == cid), None)
+
+    if not target:
+        print("Crew not found")
+        return
+
+    print(f"\nCurrent: {target.crew_id} | {target.name} | {target.role} | {target.status}")
+    print("Leave blank to keep current value\n")
+
+    name = input(f"Name [{target.name}]: ").strip()
+    role = input(f"Role [{target.role}]: ").strip()
+    atype = input(f"Aircraft Type [{target.aircraft_type}]: ").strip()
+    status = input(f"Status [{target.status}]: ").strip()
+    duty = input(f"Duty Hours [{target.duty_hours}]: ").strip()
+    rest = input(f"Rest Hours [{target.rest_hours}]: ").strip()
+
+    if name:
+        target.name = name
+
+    if role:
+        target.role = role
+
+    if atype:
+        target.aircraft_type = atype
+
+    if status:
+        target.status = status
+
+    if duty:
+        if not duty.isdigit():
+            print("Invalid duty hours")
+            return
+        target.duty_hours = duty
+
+    if rest:
+        if not rest.isdigit():
+            print("Invalid rest hours")
+            return
+        target.rest_hours = rest
+
+    # 🔹 SAVE FILE
+    with open("crew.csv", "w") as f:
+        for c in crew_list:
+            f.write(",".join([
+                c.crew_id, c.name, c.role,
+                c.flight_no, c.shift,
+                c.aircraft_type, c.status,
+                c.duty_hours, c.rest_hours
+            ]) + "\n")
+
+    print(f"✅ Crew {cid} updated successfully")
+
+    # 🔥 AIRCRAFT-STYLE LOGIC
+
+    from allocation_engine import load_allocations, remove_allocation_for_flight, try_schedule_pending_flights
+
+    allocations = load_allocations()
+
+    # CASE 1: Crew becomes AVAILABLE → try allocation
+    if target.status == "Available":
+        print("🔄 Crew available → trying to allocate pending flights...")
+        try_schedule_pending_flights()
+
+    # CASE 2: Crew becomes UNAVAILABLE → remove full allocations
+    else:
+        affected = []
+
+        for fno, data in allocations.items():
+            if len(data) >= 5:
+                crew_ids = data[4].split("|")
+
+                if cid in crew_ids:
+                    affected.append(fno)
+
+        for fno in affected:
+            print(f"⚠️ Removing full allocation for flight {fno}")
+            remove_allocation_for_flight(fno)

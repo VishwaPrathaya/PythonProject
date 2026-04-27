@@ -1,7 +1,6 @@
 # Class Runway to store info about runways
 
 from validation import validate_runway
-from constraint_checking import check_runway_constraints   
 
 
 class Runway:
@@ -19,83 +18,54 @@ class Runway:
         self.maintenance_from = maintenance_from
         self.maintenance_to = maintenance_to
 
-    # Display runway details
-    def display(self):
-        print("Runway ID:", self.runway_id,
-              "| Length:", self.length,
-              "| Status:", self.availability,
-              "| Assigned Flight:", self.assigned_flight,
-              "| Usage:", self.usage,
-              "| Maintenance:", self.maintenance_window,
-              "| From:", self.maintenance_from,
-              "| To:", self.maintenance_to)
 
-
-# Load runway data from file
+# ---------------- LOAD ----------------
 def load_runways():
 
     runways = []
 
     try:
-        with open("runwaydetails.txt", "r") as f:
+        with open("runwaydetails.csv", "r") as f:
 
             for line in f:
                 data = line.strip().split(",")
 
                 if len(data) != 8:
-                    print("Invalid runway data:", line)
                     continue
 
-                runway = Runway(*data)
-                runways.append(runway)
+                runways.append(Runway(*data))
 
     except FileNotFoundError:
-        print("runwaydetails.txt not found. File will be created when data is added.")
+        pass
 
     return runways
 
 
-# Display runway details
+# ---------------- DISPLAY ----------------
 def display_runways():
 
     runways = load_runways()
 
-    if len(runways) == 0:
+    if not runways:
         print("\nNo runway data available.")
         return
 
     print("\n--- Runway Details ---")
 
     for r in runways:
-        r.display()
+        print(f"{r.runway_id} | {r.length} | {r.availability} | {r.assigned_flight} | {r.usage} | {r.maintenance_window}")
 
 
-def auto_allocate_runways():
-
-    from data_loader import load_flights
-    from allocation_engine import allocate_flight
-
-    flights = load_flights()
-
-    for flight in flights:
-
-        # skip already allocated
-        if flight.aircraft == "NA":
-            continue
-
-        # try allocate runway through full system
-        allocate_flight(flight)
-
-# Write runway data into file
+# ---------------- WRITE ----------------
 def writeData():
 
     print("Runway Module")
     n = int(input("Enter number of runways: "))
     existing = load_runways()
 
-    new_runway_added = False
+    new_added = False
 
-    with open("runwaydetails.txt", "a") as file:
+    with open("runwaydetails.csv", "a") as file:
 
         for _ in range(n):
 
@@ -108,16 +78,13 @@ def writeData():
             maintenance_from = input("From (NA if none): ")
             maintenance_to = input("To (NA if none): ")
 
-            # 🔹 validation
             if not validate_runway(length, availability, usage, maintenance_window):
                 continue
 
-            # duplicate check
             if any(r.runway_id == runway_id for r in existing):
                 print("Duplicate runway")
                 continue
 
-            # maintenance check
             if maintenance_window == "No" and (maintenance_from != "NA" or maintenance_to != "NA"):
                 print("Invalid maintenance data")
                 continue
@@ -138,9 +105,119 @@ def writeData():
                 maintenance_from, maintenance_to
             ))
 
-            new_runway_added = True
+            new_added = True
 
-    print(" Runways added")
+    print("✅ Runways added")
 
-    if new_runway_added:
-        auto_allocate_runways()
+    # 🔥 SAME AS AIRCRAFT / GATE
+    if new_added:
+        from allocation_engine import try_schedule_pending_flights
+        try_schedule_pending_flights()
+
+
+# ---------------- REMOVE ----------------
+def remove_runway():
+
+    rid = input("Enter Runway ID to remove: ")
+
+    runways = load_runways()
+    updated = []
+
+    found = False
+
+    from allocation_engine import load_allocations
+    allocations = load_allocations()
+
+    for r in runways:
+
+        if r.runway_id == rid:
+            found = True
+
+            # 🔥 DIRECT DEALLOCATION (NO HELPER FUNCTION)
+            for fno, data in allocations.items():
+
+                if len(data) > 3 and data[3] == rid:
+                    print(f"⚠️ Runway used by Flight {fno} → removing allocation")
+
+                    from allocation_engine import remove_allocation_for_flight
+                    remove_allocation_for_flight(fno)
+
+            continue
+
+        updated.append(r)
+
+    if not found:
+        print("❌ Runway not found")
+        return
+
+    with open("runwaydetails.csv", "w") as f:
+        for r in updated:
+            f.write(",".join([
+                str(r.length), r.availability,
+                r.assigned_flight, r.runway_id,
+                r.usage, r.maintenance_window,
+                r.maintenance_from, r.maintenance_to
+            ]) + "\n")
+
+    print("✅ Runway removed successfully")
+
+    # 🔥 RE-ALLOCATE
+    from allocation_engine import try_schedule_pending_flights
+    try_schedule_pending_flights()
+
+
+# ---------------- UPDATE ----------------
+def update_runway():
+
+    runways = load_runways()
+
+    if not runways:
+        print("No runways available")
+        return
+
+    rid = input("Enter Runway ID to update: ")
+
+    target = next((r for r in runways if r.runway_id == rid), None)
+
+    if not target:
+        print("Runway not found")
+        return
+
+    print(f"\nCurrent: {target.runway_id} | {target.availability} | {target.maintenance_window}")
+    print("Leave blank to keep current value\n")
+
+    availability = input(f"Availability [{target.availability}]: ").strip()
+    usage = input(f"Usage [{target.usage}]: ").strip()
+    maintenance = input(f"Maintenance [{target.maintenance_window}]: ").strip()
+
+    if availability:
+        target.availability = availability
+
+    if usage:
+        target.usage = usage
+
+    if maintenance:
+        target.maintenance_window = maintenance
+
+    # 🔹 SAVE FILE
+    with open("runwaydetails.csv", "w") as f:
+        for r in runways:
+            f.write(",".join([
+                str(r.length), r.availability,
+                r.assigned_flight, r.runway_id,
+                r.usage, r.maintenance_window,
+                r.maintenance_from, r.maintenance_to
+            ]) + "\n")
+
+    print(f"✅ Runway {rid} updated successfully")
+
+    # 🔥 SAME DESIGN PATTERN (NO RELEASE FUNCTION)
+    if target.availability == "Free" and target.maintenance_window == "No":
+        print("🔄 Runway available → reallocating flights")
+        from allocation_engine import try_schedule_pending_flights
+        try_schedule_pending_flights()
+
+    else:
+        print("⚠️ Runway unavailable → affected flights will be reprocessed")
+        from allocation_engine import try_schedule_pending_flights
+        try_schedule_pending_flights()
