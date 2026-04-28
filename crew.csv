@@ -1,6 +1,6 @@
-C1,Reya,Co-Pilot,F101,Morning,Wide,Assigned,7,8
-C2,Shlokha,Pilot,NA,Morning,Narrow,Available,8,10
-C3,Raj,Pilot,NA,Evening,Narrow,Available,8,12
-C4,Rei,Co-Pilot,F101,Evening,Wide,Assigned,7,8
+C1,Reya,Cabin Crew,F103,Morning,Wide,Assigned,7,8
+C2,Shlokha,Pilot,F102,Morning,Narrow,Assigned,8,10
+C3,Raj,Pilot,F102,Evening,Narrow,Assigned,8,12
+C4,Rei,Co-Pilot,F103,Evening,Wide,Assigned,7,8
 C5,Shriya,Cabin Crew,NA,Morning,Wide,Available,8,10
 C6,Ramiya,Cabin Crew,NA,Evening,Narrow,Available,8,10

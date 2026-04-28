@@ -232,7 +232,7 @@ def get_available_resources(resources, allocations, interactive=False):
 
             used_by = None
 
-            # 🔍 find which flight is using this resource
+            # find which flight is using this resource
             for fno, data in allocations.items():
                 if len(data) > 5 and r.res_id in data[5].split("|"):
                     used_by = fno

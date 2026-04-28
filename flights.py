@@ -95,7 +95,7 @@ def writeData():
                 print("- Constraint violation\n")
                 continue
 
-            # - CREATE OBJECT (NO AIRCRAFT YET)
+            # - CREATE OBJECT 
             new_flight = Flight(
                 fno, airline, origin, destination,
                 arr, dep, date, "NA", flight_type, capacity

@@ -1,3 +1,4 @@
 F101,Airindia,Chennai,Mumbai,1300,1500,25-06-2026,A1,Domestic,100
-F102,Indigo,Chennai,Dubai,1000,1200,30-04-2026,NA,International,70
-F103,Airindia,Chennai,Kolkata,1600,1730,30-09-2026,NA,Domestic,100
+F102,Indigo,Chennai,Dubai,1000,1200,30-04-2026,A2,International,70
+F103,Airindia,Chennai,Kolkata,1600,1730,30-09-2026,A1,Domestic,100
+F104,Indigo,Chennai,Kolkata,1000,1400,25-04-2026,NA,Domestic,120
