@@ -81,11 +81,11 @@ def writeData():
             existing.append(Resource(res_id, res_type, status))
             new_added = True
 
-    print("\n✅ Resources added successfully!")
+    print("\n Resources added successfully!")
 
-    # 🔥 TRIGGER (same as aircraft)
+    # - TRIGGER (same as aircraft)
     if new_added:
-        print("🔄 New resources available → reallocating flights")
+        print("- New resources available → reallocating flights")
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()
 
@@ -108,14 +108,14 @@ def remove_resource():
         if r.res_id == rid:
             found = True
 
-            # 🔥 If resource used → remove full allocation
+            # - If resource used → remove full allocation
             for fno, data in allocations.items():
 
                 if len(data) > 5:
                     used_resources = data[5].split("|")
 
                     if rid in used_resources:
-                        print(f"⚠️ Resource used by flight {fno} → removing allocation")
+                        print(f" Resource used by flight {fno} → removing allocation")
 
                         from allocation_engine import remove_allocation_for_flight
                         remove_allocation_for_flight(fno)
@@ -125,20 +125,20 @@ def remove_resource():
         updated.append(r)
 
     if not found:
-        print("❌ Resource not found")
+        print(" Resource not found")
         return
 
-    # 🔹 SAVE FILE
+    #  SAVE FILE
     with open("ground_resources.csv", "w") as f:
         for r in updated:
             f.write(",".join([
                 r.res_id, r.res_type, r.status
             ]) + "\n")
 
-    print("✅ Resource removed successfully")
+    print("- Resource removed successfully")
 
-    # 🔥 TRIGGER
-    print("🔄 Reallocating pending flights...")
+    #  TRIGGER
+    print("- Reallocating pending flights...")
     from allocation_engine import try_schedule_pending_flights
     try_schedule_pending_flights()
 
@@ -168,7 +168,7 @@ def update_resource():
 
     old_status = target.status
 
-    # 🔹 APPLY CHANGES
+    # - APPLY CHANGES
     if rtype:
         target.res_type = rtype
 
@@ -178,7 +178,7 @@ def update_resource():
             return
         target.status = status
 
-    # 🔹 SAVE FILE
+    # - SAVE FILE
     with open("ground_resources.csv", "w") as f:
         for r in resources:
             f.write(",".join([
@@ -187,20 +187,20 @@ def update_resource():
                 r.status
             ]) + "\n")
 
-    print(f"✅ Resource {rid} updated successfully")
+    print(f"- Resource {rid} updated successfully")
 
-    # 🔥 SMART TRIGGER (same as aircraft)
+    
 
-    # ✅ Became AVAILABLE → allocate
+    # - Became AVAILABLE → allocate
     if target.status == "Available" and old_status != "Available":
-        print("🔄 Resource became available → reallocating flights")
+        print(" Resource became available → reallocating flights")
 
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()
 
-    # ⚠️ Became IN USE manually → reset system
+    # - Became IN USE manually → reset system
     elif target.status == "In Use" and old_status == "Available":
-        print("⚠️ Resource manually occupied → resetting allocations")
+        print("- Resource manually occupied → resetting allocations")
 
         from allocation_engine import load_allocations, remove_allocation_for_flight
 

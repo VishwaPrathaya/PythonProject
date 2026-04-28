@@ -1,1 +1,3 @@
-G1,T1,Domestic,Wide,Free
+G1,T1,Domestic,Wide,Occupied
+G2,T1,Domestic,Wide,Free
+G3,T2,International,Narrow,Free

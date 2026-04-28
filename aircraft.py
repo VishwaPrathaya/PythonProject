@@ -78,7 +78,7 @@ def writeData():
             f.write(",".join([aid, atype, location, maintenance, tat]) + "\n")
             existing.append(Aircraft(aid, atype, location, maintenance, tat))
 
-    print("✅ Aircraft added")
+    print(" Aircraft added !! ")
 
     from allocation_engine import try_schedule_pending_flights
     try_schedule_pending_flights()
@@ -142,15 +142,15 @@ def update_aircraft():
                 str(a.turnaround_time)
             ]) + "\n")
 
-    print(f"✅ Aircraft {aid} updated successfully")
+    print(f" Aircraft {aid} updated successfully")
 
-    # 🔥 NEW CLEAN LOGIC
+    
 
     from allocation_engine import load_allocations, remove_allocation_for_flight, try_schedule_pending_flights
 
     allocations = load_allocations()
 
-    # ❗ If aircraft becomes unusable → FULL RESET
+    #  If aircraft becomes unusable → FULL RESET
     if target.maintenance == "Yes" or target.location.lower() != "airport":
 
         affected_flights = []
@@ -163,11 +163,11 @@ def update_aircraft():
             remove_allocation_for_flight(fno)
 
         if affected_flights:
-            print(f"⚠️ Aircraft removed from flights: {affected_flights}")
+            print(f" Aircraft removed from flights: {affected_flights}")
 
-    # ✅ If aircraft becomes usable → try allocation
+    #  If aircraft becomes usable → try allocation
     else:
-        print("🔄 Trying to allocate pending flights...")
+        print(" Trying to allocate pending flights...")
         try_schedule_pending_flights()
 # ---------------- REMOVE ----------------
 def remove_aircraft():
@@ -192,7 +192,7 @@ def remove_aircraft():
             for line in f:
                 data = line.strip().split(",")
                 if len(data) >= 2 and data[1] == aid:
-                    print("❌ Cannot delete: Aircraft is allocated to a flight")
+                    print(" Cannot delete: Aircraft is allocated to a flight")
                     return
     except FileNotFoundError:
         pass
@@ -209,4 +209,4 @@ def remove_aircraft():
                 str(a.turnaround_time)
             ]) + "\n")
 
-    print("✅ Aircraft removed successfully")
+    print(" Aircraft removed successfully")

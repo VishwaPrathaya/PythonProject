@@ -15,7 +15,7 @@ def view_scheduled_flights():
     end = input("To time: ")
 
     if not start.isdigit() or not end.isdigit():
-        print("❌ Invalid time range")
+        print("- Invalid time range")
         return
 
     matches = search_flights(flights, time_from=int(start), time_to=int(end))
@@ -50,7 +50,7 @@ def book_flight():
         selected = next((f for f in flights if f.fno == fno), None)
 
         if not selected:
-            print("❌ Flight not found")
+            print("- Flight not found")
             return
 
         print(f"\n{selected.fno} | {selected.origin} → {selected.destination} | Arr: {selected.arr} | Dep: {selected.dep} | {selected.flight_type}")
@@ -64,7 +64,7 @@ def book_flight():
         end = input("To time: ")
 
         if not start.isdigit() or not end.isdigit():
-            print("❌ Invalid time range")
+            print("- Invalid time range")
             return
 
         matches = search_flights(
@@ -87,11 +87,11 @@ def book_flight():
         selected = next((f for f in matches if f.fno == fno), None)
 
         if not selected:
-            print("❌ Flight not found")
+            print("- Flight not found")
             return
 
     else:
-        print("❌ Invalid choice")
+        print(" Invalid choice")
         return
 
     # ---------------- PASSENGER INPUT ----------------
@@ -123,7 +123,7 @@ def book_flight():
     with open("passenger.csv", "a") as f:
         f.write(f"{pid},{name},{selected.fno},{seat},{ticket_class},Booked\n")
 
-    print(f"✅ Booking successful — {ticket_class} class")
+    print(f"- Booking successful — {ticket_class} class")
     print(f"   Flight : {selected.fno} | {selected.origin} → {selected.destination}")
     print(f"   Seat   : {seat}")
 

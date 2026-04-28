@@ -16,8 +16,8 @@ def allocate_passengers():
         else:
             f.status = "EMPTY"
 
-    # 🔹 SAVE BACK TO FILE
+    # - SAVE BACK TO FILE
     from allocation_engine import update_flight_file
     update_flight_file(flights)
 
-    print("✅ Passenger allocation updated")
+    print(" Passenger allocation updated")

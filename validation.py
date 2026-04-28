@@ -9,13 +9,13 @@ def validate_flight(flight_id, arrival, departure, flight_type, date, existing_f
         print("Invalid Flight ID")
         return False
 
-    # 🔹 duplicate check
+    # - duplicate check
     for f in existing_flights:
         if f.fno == flight_id:
             print("Duplicate Flight ID not allowed")
             return False
 
-    # 🔹 time validation
+    # - time validation
     if not arrival.isdigit() or not departure.isdigit():
         print("Arrival/Departure must be numbers")
         return False
@@ -24,12 +24,12 @@ def validate_flight(flight_id, arrival, departure, flight_type, date, existing_f
         print("Arrival must be < Departure")
         return False
 
-    # 🔹 flight type validation (NEW)
+    # - flight type validation (NEW)
     if flight_type not in ["Domestic", "International"]:
         print("Invalid Flight Type")
         return False
 
-    # 🔹 date validation (basic check)
+    # - date validation (basic check)
     if date.strip() == "":
         print("Date cannot be empty")
         return False

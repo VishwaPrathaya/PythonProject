@@ -133,10 +133,10 @@ def remove_flight():
             updated.append(f)
 
     if not target:
-        print("❌ Flight not found")
+        print("- Flight not found")
         return
 
-    # 🔹 rewrite flights file
+    # - rewrite flights file
     with open("flights.csv", "w") as file:
         for f in updated:
             file.write(",".join([
@@ -145,14 +145,14 @@ def remove_flight():
                 f.flight_type, str(f.capacity)
             ]) + "\n")
 
-    print(f"✅ Flight {fno} removed from system")
+    print(f"- Flight {fno} removed from system")
 
-    # 🔹 remove allocation + free resources
+    # - remove allocation + free resources
     from allocation_engine import remove_allocation_for_flight
     remove_allocation_for_flight(fno)
 
-    # 🔹 try reallocating pending flights
-    print("🔄 Attempting reallocation for pending flights...")
+    # - try reallocating pending flights
+    print(" Attempting reallocation for pending flights...")
     from allocation_engine import try_schedule_pending_flights
     try_schedule_pending_flights()
 
@@ -224,10 +224,10 @@ def update_flight():
             return
         target.capacity = int(capacity)
 
-    # 🔥 If timing changed → remove old allocation
+    #  If timing changed → remove old allocation
     from allocation_engine import remove_allocation_for_flight
 
-    print("♻️ Removing old allocation (if any)...")
+    print(" Removing old allocation (if any)...")
     remove_allocation_for_flight(fno)
 
     # SAVE UPDATED FILE
@@ -239,9 +239,9 @@ def update_flight():
                 fl.flight_type, str(fl.capacity)
             ]) + "\n")
 
-    print("✅ Flight updated successfully")
+    print(" Flight updated successfully")
 
-    # 🔄 TRY REALLOCATION
-    print("🔄 Attempting reallocation...")
+    # - TRY REALLOCATION
+    print("- Attempting reallocation...")
     from allocation_engine import allocate_flight
     allocate_flight(target)

@@ -1,4 +1,3 @@
-
 import flights
 import gates
 import passenger
@@ -32,31 +31,34 @@ def main():
             print("Invalid input. Enter a number.")
             continue
 
-        # -------- FLIGHT (ALREADY AUTO HANDLED INSIDE) --------
+        # -------- FLIGHT --------
         if ch == 1:
             print("\n--- Flight Module ---")
             print("1. Add Flight")
             print("2. Remove Flight")
-            print("3. Display Flights")
+            print("3. Update Flight")
+            print("4. Display Flights")
 
             fch = input("Choice: ")
 
             if fch == "1":
                 flights.writeData()
             elif fch == "2":
-                flights.remove_flight()   # ✅ ADD THIS
+                flights.remove_flight()
             elif fch == "3":
+                flights.update_flight()
+            elif fch == "4":
                 flights.display_flights()
             else:
                 print("Invalid choice")
-                    
 
         # -------- GATE --------
         elif ch == 2:
             print("\n--- Gate Module ---")
             print("1. Add Gate")
             print("2. Remove Gate")
-            print("3. Display Gates")
+            print("3. Update Gate")
+            print("4. Display Gates")
 
             gch = input("Choice: ")
 
@@ -64,8 +66,10 @@ def main():
                 gates.writeData()
                 optimization.optimized_allocation_flow()
             elif gch == "2":
-                gates.remove_gate()   # ✅
+                gates.remove_gate()
             elif gch == "3":
+                gates.update_gate()
+            elif gch == "4":
                 gates.display_gates()
             else:
                 print("Invalid choice")
@@ -76,7 +80,8 @@ def main():
             print("1. Book Flight")
             print("2. Add Passenger")
             print("3. Remove Passenger")
-            print("4. Display Passengers")
+            print("4. Update Passenger")
+            print("5. Display Passengers")
 
             pch = input("Choice: ")
 
@@ -86,17 +91,21 @@ def main():
             elif pch == "2":
                 passenger.writeData()
             elif pch == "3":
-                passenger.remove_passenger()   # ✅
+                passenger.remove_passenger()
             elif pch == "4":
+                passenger.update_passenger()
+            elif pch == "5":
                 passenger.display_passengers()
             else:
                 print("Invalid choice")
+
         # -------- RUNWAY --------
         elif ch == 4:
             print("\n--- Runway Module ---")
             print("1. Add Runway")
             print("2. Remove Runway")
-            print("3. Display Runways")
+            print("3. Update Runway")
+            print("4. Display Runways")
 
             rch = input("Choice: ")
 
@@ -104,16 +113,21 @@ def main():
                 runways.writeData()
                 optimization.optimized_allocation_flow()
             elif rch == "2":
-                runways.remove_runway()   # ✅
+                runways.remove_runway()
             elif rch == "3":
+                runways.update_runway()
+            elif rch == "4":
                 runways.display_runways()
+            else:
+                print("Invalid choice")
 
         # -------- CREW --------
         elif ch == 5:
             print("\n--- Crew Module ---")
             print("1. Add Crew")
             print("2. Remove Crew")
-            print("3. Display Crew")
+            print("3. Update Crew")
+            print("4. Display Crew")
 
             cch = input("Choice: ")
 
@@ -121,15 +135,21 @@ def main():
                 crew.writeData()
                 optimization.optimized_allocation_flow()
             elif cch == "2":
-                crew.remove_crew()   # ✅
+                crew.remove_crew()
             elif cch == "3":
+                crew.update_crew()
+            elif cch == "4":
                 crew.display_crew()
+            else:
+                print("Invalid choice")
+
         # -------- AIRCRAFT --------
         elif ch == 6:
             print("\n--- Aircraft Module ---")
             print("1. Add Aircraft")
             print("2. Remove Aircraft")
-            print("3. Display Aircraft")
+            print("3. Update Aircraft")
+            print("4. Display Aircraft")
 
             ach = input("Choice: ")
 
@@ -137,16 +157,21 @@ def main():
                 aircraft.writeData()
                 optimization.optimized_allocation_flow()
             elif ach == "2":
-                aircraft.remove_aircraft()   # ✅
+                aircraft.remove_aircraft()
             elif ach == "3":
+                aircraft.update_aircraft()
+            elif ach == "4":
                 aircraft.display_aircraft()
+            else:
+                print("Invalid choice")
 
         # -------- GROUND RESOURCES --------
         elif ch == 7:
             print("\n--- Resource Module ---")
             print("1. Add Resource")
             print("2. Remove Resource")
-            print("3. Display Resources")
+            print("3. Update Resource")
+            print("4. Display Resources")
 
             rch = input("Choice: ")
 
@@ -154,16 +179,21 @@ def main():
                 ground_resources.writeData()
                 optimization.optimized_allocation_flow()
             elif rch == "2":
-                ground_resources.remove_resource()   # ✅
+                ground_resources.remove_resource()
             elif rch == "3":
+                ground_resources.update_resource()
+            elif rch == "4":
                 ground_resources.display_resources()
+            else:
+                print("Invalid choice")
 
         # -------- DISRUPTION --------
         elif ch == 8:
             print("\n--- Disruption Module ---")
             print("1. Add Disruption")
             print("2. Remove Disruption")
-            print("3. Display Disruptions")
+            print("3. Update Disruption")
+            print("4. Display Disruptions")
 
             dch = input("Choice: ")
 
@@ -171,9 +201,14 @@ def main():
                 disruption_details.writeData()
                 optimization.optimized_allocation_flow()
             elif dch == "2":
-                disruption_details.remove_disruption()   # ✅
+                disruption_details.remove_disruption()
             elif dch == "3":
+                disruption_details.update_disruption()
+            elif dch == "4":
                 disruption_details.display_disruptions()
+            else:
+                print("Invalid choice")
+
         # -------- DISPLAY ALL --------
         elif ch == 9:
             print("\n========== ALL DATA ==========")

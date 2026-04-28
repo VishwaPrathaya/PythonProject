@@ -102,7 +102,7 @@ def remove_crew():
 
     cid = input("Enter Crew ID to remove: ")
 
-    # 🔹 check existence
+    #  check existence
     found = False
     for c in crew_list:
         if c.crew_id == cid:
@@ -113,7 +113,7 @@ def remove_crew():
         print("Crew not found")
         return
 
-    # 🔹 check allocation file
+    #  check allocation file
     try:
         with open("flight_allocations.csv") as f:
             for line in f:
@@ -123,12 +123,12 @@ def remove_crew():
                     crew_ids = data[4].split("|")
 
                     if cid in crew_ids:
-                        print("❌ Cannot remove: Crew is assigned to a flight")
+                        print(" Cannot remove: Crew is assigned to a flight")
                         return
     except:
         pass
 
-    # 🔹 remove crew
+    #  remove crew
     updated = [c for c in crew_list if c.crew_id != cid]
 
     with open("crew.csv", "w") as f:
@@ -140,7 +140,7 @@ def remove_crew():
                 c.duty_hours, c.rest_hours
             ]) + "\n")
 
-    print("✅ Crew removed successfully")
+    print(" Crew removed successfully")
 
 # ---------------- UPDATE ----------------
 def update_crew():
@@ -193,7 +193,7 @@ def update_crew():
             return
         target.rest_hours = rest
 
-    # 🔹 SAVE FILE
+    #  SAVE FILE
     with open("crew.csv", "w") as f:
         for c in crew_list:
             f.write(",".join([
@@ -203,9 +203,9 @@ def update_crew():
                 c.duty_hours, c.rest_hours
             ]) + "\n")
 
-    print(f"✅ Crew {cid} updated successfully")
+    print(f" Crew {cid} updated successfully")
 
-    # 🔥 AIRCRAFT-STYLE LOGIC
+    
 
     from allocation_engine import load_allocations, remove_allocation_for_flight, try_schedule_pending_flights
 
@@ -213,7 +213,7 @@ def update_crew():
 
     # CASE 1: Crew becomes AVAILABLE → try allocation
     if target.status == "Available":
-        print("🔄 Crew available → trying to allocate pending flights...")
+        print(" Crew available → trying to allocate pending flights...")
         try_schedule_pending_flights()
 
     # CASE 2: Crew becomes UNAVAILABLE → remove full allocations
@@ -228,5 +228,5 @@ def update_crew():
                     affected.append(fno)
 
         for fno in affected:
-            print(f"⚠️ Removing full allocation for flight {fno}")
+            print(f" Removing full allocation for flight {fno}")
             remove_allocation_for_flight(fno)

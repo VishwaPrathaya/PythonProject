@@ -81,14 +81,14 @@ def remove_disruption():
         print("Disruption not found")
         return
 
-    # 🔥 SYSTEM RESPONSE (ONLY IF ACTIVE)
+    #  SYSTEM RESPONSE (ONLY IF ACTIVE)
     if target.status == "Pending":
-        print("🔄 Active disruption removed → restoring system")
+        print(" Active disruption removed → restoring system")
 
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()
 
-    # 🔹 SAVE FILE
+    # - SAVE FILE
     with open("disruption.csv", "w") as f:
         for d in updated:
             f.write(",".join([
@@ -99,7 +99,7 @@ def remove_disruption():
                 d.priority
             ]) + "\n")
 
-    print("✅ Disruption removed successfully")
+    print("- Disruption removed successfully")
 
 
 # ---------------- WRITE ----------------
@@ -135,21 +135,21 @@ def writeData():
                 disruption_type, status, priority
             ]) + "\n")
 
-            # 🔥 TRIGGER (VERY IMPORTANT FOR SYSTEM + VIVA)
+            # - TRIGGER (VERY IMPORTANT FOR SYSTEM + VIVA)
             if disruption_type == "Cancellation":
-                print("⚠️ Trigger: Release aircraft, crew, gate, runway")
+                print("- Trigger: Release aircraft, crew, gate, runway")
 
                 from allocation_engine import handle_cancellation
                 handle_cancellation(flight_no)
 
             elif disruption_type == "Delay":
-                print("⚠️ Trigger: Reschedule flight")
+                print("- Trigger: Reschedule flight")
 
                 from allocation_engine import handle_delay
                 handle_delay(flight_no)
 
             elif disruption_type in ["Technical", "Weather"]:
-                print("⚠️ Trigger: System re-optimization")
+                print(" Trigger: System re-optimization")
 
                 from optimization import optimized_allocation_flow
                 optimized_allocation_flow()
@@ -193,7 +193,7 @@ def update_disruption():
     if priority:
         target.priority = priority
 
-    # 🔹 SAVE FILE
+    #  SAVE FILE
     with open("disruption.csv", "w") as f:
         for d in disruptions:
             f.write(",".join([
@@ -204,9 +204,9 @@ def update_disruption():
                 d.priority
             ]) + "\n")
 
-    print(f"✅ Disruption {did} updated successfully")
+    print(f" Disruption {did} updated successfully")
 
-    # 🔥 SYSTEM RESPONSE
+    # - SYSTEM RESPONSE
     _handle_disruption_update(target, old_status)
 
 
@@ -215,34 +215,34 @@ def _handle_disruption_update(disruption, old_status):
 
     fno = disruption.flight_no
 
-    # ✅ CASE 1: RESOLVED → restore system
+    #  CASE 1: RESOLVED → restore system
     if disruption.status == "Resolved" and old_status != "Resolved":
 
-        print("🔄 Disruption resolved → reallocating flights")
+        print("Reallocation triggered (disruption resolved)")
 
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()
 
-    # ✅ CASE 2: PENDING → apply disruption again
+    #  CASE 2: STILL PENDING → apply disruption logic
     elif disruption.status == "Pending":
 
         if disruption.disruption_type == "Cancellation":
 
-            print("⚠️ Applying cancellation")
+            print("Trigger: Release aircraft, crew, gate, runway")
 
-            from allocation_engine import handle_cancellation
-            handle_cancellation(fno)
+            from allocation_engine import remove_allocation_for_flight
+            remove_allocation_for_flight(fno)
 
         elif disruption.disruption_type == "Delay":
 
-            print("⏳ Applying delay")
+            print("Trigger: Reschedule flight")
 
-            from allocation_engine import handle_delay
-            handle_delay(fno)
+            from allocation_engine import try_schedule_pending_flights
+            try_schedule_pending_flights()
 
         elif disruption.disruption_type in ["Technical", "Weather"]:
 
-            print("🔄 Re-optimizing system")
+            print("Trigger: Re-optimization required")
 
             from optimization import optimized_allocation_flow
             optimized_allocation_flow()

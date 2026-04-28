@@ -74,11 +74,11 @@ def writeData():
             existing.append(Gate(gid, terminal, gtype, size, availability))
             new_gates_added = True
 
-    print("✅ Gates added")
+    print("- Gates added")
 
-    # 🔥 TRIGGER (same as aircraft)
+    # - TRIGGER (same as aircraft)
     if new_gates_added:
-        print("🔄 New gates available → reallocating flights")
+        print("- New gates available → reallocating flights")
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()
 
@@ -93,7 +93,7 @@ def remove_gate():
 
     found = False
 
-    # 🔹 check allocations
+    # - check allocations
     from allocation_engine import load_allocations
     allocations = load_allocations()
 
@@ -102,10 +102,10 @@ def remove_gate():
         if g.gate_id == gid:
             found = True
 
-            # 🔥 If gate is used → remove entire allocation (same philosophy)
+            # - If gate is used → remove entire allocation (same philosophy)
             for fno, data in allocations.items():
                 if len(data) > 2 and data[2] == gid:
-                    print(f"⚠️ Gate used by flight {fno} → removing allocation")
+                    print(f"- Gate used by flight {fno} → removing allocation")
 
                     from allocation_engine import remove_allocation_for_flight
                     remove_allocation_for_flight(fno)
@@ -115,10 +115,10 @@ def remove_gate():
         updated.append(g)
 
     if not found:
-        print("❌ Gate not found")
+        print(" Gate not found")
         return
 
-    # 🔹 SAVE FILE
+    #  SAVE FILE
     with open("gates.csv", "w") as f:
         for g in updated:
             f.write(",".join([
@@ -127,10 +127,10 @@ def remove_gate():
                 g.availability
             ]) + "\n")
 
-    print("✅ Gate removed successfully")
+    print(" Gate removed successfully")
 
-    # 🔥 TRIGGER
-    print("🔄 Reallocating pending flights...")
+    #  TRIGGER
+    print("- Reallocating pending flights...")
     from allocation_engine import try_schedule_pending_flights
     try_schedule_pending_flights()
 
@@ -162,7 +162,7 @@ def update_gate():
 
     old_availability = target.availability
 
-    # 🔹 APPLY CHANGES
+    # - APPLY CHANGES
     if terminal:
         target.terminal = terminal
 
@@ -175,7 +175,7 @@ def update_gate():
     if availability:
         target.availability = availability
 
-    # 🔹 SAVE FILE
+    # - SAVE FILE
     with open("gates.csv", "w") as f:
         for g in gates:
             f.write(",".join([
@@ -186,20 +186,20 @@ def update_gate():
                 g.availability
             ]) + "\n")
 
-    print(f"✅ Gate {gid} updated successfully")
+    print(f"- Gate {gid} updated successfully")
 
-    # 🔥 SMART TRIGGER (same logic as aircraft)
+    # - SMART TRIGGER (same logic as aircraft)
 
-    # ✅ Became FREE → try allocation
+    # - Became FREE → try allocation
     if target.availability == "Free" and old_availability != "Free":
-        print("🔄 Gate became free → reallocating flights")
+        print(" Gate became free → reallocating flights")
 
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()
 
-    # ⚠️ Became OCCUPIED manually → reset system safely
+    # - Became OCCUPIED manually → reset system safely
     elif target.availability != "Free" and old_availability == "Free":
-        print("⚠️ Gate manually occupied → resetting allocations")
+        print(" Gate manually occupied → resetting allocations")
 
         from allocation_engine import load_allocations, remove_allocation_for_flight
 

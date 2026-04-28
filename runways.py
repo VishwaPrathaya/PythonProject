@@ -107,9 +107,9 @@ def writeData():
 
             new_added = True
 
-    print("✅ Runways added")
+    print("- Runways added")
 
-    # 🔥 SAME AS AIRCRAFT / GATE
+    # - SAME AS AIRCRAFT / GATE
     if new_added:
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()
@@ -133,11 +133,11 @@ def remove_runway():
         if r.runway_id == rid:
             found = True
 
-            # 🔥 DIRECT DEALLOCATION (NO HELPER FUNCTION)
+            # - DIRECT DEALLOCATION 
             for fno, data in allocations.items():
 
                 if len(data) > 3 and data[3] == rid:
-                    print(f"⚠️ Runway used by Flight {fno} → removing allocation")
+                    print(f"- Runway used by Flight {fno} → removing allocation")
 
                     from allocation_engine import remove_allocation_for_flight
                     remove_allocation_for_flight(fno)
@@ -147,7 +147,7 @@ def remove_runway():
         updated.append(r)
 
     if not found:
-        print("❌ Runway not found")
+        print("- Runway not found")
         return
 
     with open("runwaydetails.csv", "w") as f:
@@ -159,9 +159,9 @@ def remove_runway():
                 r.maintenance_from, r.maintenance_to
             ]) + "\n")
 
-    print("✅ Runway removed successfully")
+    print("- Runway removed successfully")
 
-    # 🔥 RE-ALLOCATE
+    # - RE-ALLOCATE
     from allocation_engine import try_schedule_pending_flights
     try_schedule_pending_flights()
 
@@ -199,7 +199,7 @@ def update_runway():
     if maintenance:
         target.maintenance_window = maintenance
 
-    # 🔹 SAVE FILE
+    # - SAVE FILE
     with open("runwaydetails.csv", "w") as f:
         for r in runways:
             f.write(",".join([
@@ -209,15 +209,15 @@ def update_runway():
                 r.maintenance_from, r.maintenance_to
             ]) + "\n")
 
-    print(f"✅ Runway {rid} updated successfully")
+    print(f"- Runway {rid} updated successfully")
 
-    # 🔥 SAME DESIGN PATTERN (NO RELEASE FUNCTION)
+    # - SAME DESIGN PATTERN (NO RELEASE FUNCTION)
     if target.availability == "Free" and target.maintenance_window == "No":
-        print("🔄 Runway available → reallocating flights")
+        print("- Runway available → reallocating flights")
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()
 
     else:
-        print("⚠️ Runway unavailable → affected flights will be reprocessed")
+        print("- Runway unavailable → affected flights will be reprocessed")
         from allocation_engine import try_schedule_pending_flights
         try_schedule_pending_flights()

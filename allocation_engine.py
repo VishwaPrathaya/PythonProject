@@ -173,6 +173,7 @@ def get_available_runway(flight, runways, allocations, flights):
             continue
 
         if r.maintenance_window == "Yes":
+        
             continue
 
         conflict = False
@@ -222,11 +223,11 @@ def get_available_resources(resources, allocations, interactive=False):
 
     for r in resources:
 
-        # ✅ CASE 1: Available → take directly
+        #  CASE 1: Available → take directly
         if r.status == "Available":
             selected.append(r)
 
-        # ⚠️ CASE 2: In Use → ask user (only if interactive mode ON)
+        #  CASE 2: In Use → ask user (only if interactive mode ON)
         elif r.status == "In Use" and interactive:
 
             used_by = None
@@ -237,7 +238,7 @@ def get_available_resources(resources, allocations, interactive=False):
                     used_by = fno
                     break
 
-            print(f"⚠️ Resource {r.res_id} is currently used by Flight {used_by}")
+            print(f" Resource {r.res_id} is currently used by Flight {used_by}")
 
             choice = input("Do you want to reassign it? (yes/no): ")
 
@@ -264,7 +265,7 @@ def allocate_flight(flight):
     allocations = load_allocations()
 
     if flight.fno in allocations:
-        print(f"⚠️  Flight {flight.fno} already allocated")
+        print(f"Flight {flight.fno} already allocated")
         return
 
     aircraft_list = load_aircraft()
@@ -277,31 +278,31 @@ def allocate_flight(flight):
     # -------- AIRCRAFT --------
     aircraft = get_available_aircraft(flight, aircraft_list, flights)
     if not aircraft:
-        print(f"❌ No aircraft available for flight {flight.fno}")
+        print(f" No aircraft available for flight {flight.fno}")
         return
 
     # -------- GATE --------
     selected_gate = get_available_gate(flight, gates, allocations, flights, aircraft)
     if not selected_gate:
-        print(f"❌ No suitable gate available for flight {flight.fno}")
+        print(f" No suitable gate available for flight {flight.fno}")
         return
 
     # -------- RUNWAY --------
     selected_runway = get_available_runway(flight, runways, allocations, flights)
     if not selected_runway:
-        print(f"❌ No runway available for flight {flight.fno}")
+        print(f" No runway available for flight {flight.fno}")
         return
 
     # -------- CREW --------
     selected_crew = get_available_crew(crew_list, aircraft.atype)
     if not selected_crew:
-        print(f"❌ Not enough crew for flight {flight.fno}")
+        print(f" Not enough crew for flight {flight.fno}")
         return
 
     # -------- RESOURCES --------
     selected_res = get_available_resources(resources, allocations, interactive=False)
     if not selected_res:
-        print(f"❌ Not enough resources for flight {flight.fno}")
+        print(f" Not enough resources for flight {flight.fno}")
         return
 
     # -------- FINAL UPDATE (ONLY AFTER FULL SUCCESS) --------
@@ -340,14 +341,14 @@ def allocate_flight(flight):
         [r.res_id for r in selected_res]
     )
 
-    print(f"✅ Flight {flight.fno} fully allocated")
+    print(f" Flight {flight.fno} fully allocated")
     print(f"   Aircraft : {aircraft.aircraft_id}")
     print(f"   Gate     : {selected_gate.gate_id}")
     print(f"   Runway   : {selected_runway.runway_id}")
     print(f"   Crew     : {[c.crew_id for c in selected_crew]}")
     print(f"   Resources: {[r.res_id for r in selected_res]}")
 
-    print("⚠️ Trigger: Allocation successful → System state updated")
+    print(" Trigger: Allocation successful → System state updated")
 
 
 # ---------------- SCHEDULE PENDING FLIGHTS ----------------
@@ -361,7 +362,7 @@ def try_schedule_pending_flights():
         print("No pending flights to allocate")
         return
 
-    print(f"\n🔄 Found {len(pending)} pending flight(s). Attempting allocation...")
+    print(f"\n Found {len(pending)} pending flight(s). Attempting allocation...")
 
     for flight in pending:
         allocate_flight(flight)
@@ -424,9 +425,9 @@ def remove_allocation_for_flight(fno):
             if not line.startswith(fno + ","):
                 f.write(line)
 
-    print(f"♻️ Allocation for flight {fno} removed")
+    print(f" Allocation for flight {fno} removed")
 
-    print("⚠️ Trigger: Resources released → Reallocation triggered")
+    print(" Trigger: Resources released → Reallocation triggered")
 
    
     try_schedule_pending_flights()
