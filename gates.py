@@ -1,4 +1,5 @@
 from validation import validate_gate
+from constraint_checking import check_duplicate_gate
 
 
 class Gate:
@@ -18,13 +19,28 @@ def load_gates():
     try:
         with open("gates.csv") as f:
             for line in f:
-                data = line.strip().split(",")
+                data = line.strip().split(',')
 
                 if len(data) != 5:
                     continue
 
-                lst.append(Gate(*data))
-    except:
+                gid, terminal, gtype, size, availability = data
+
+                # Field-level validation
+                if not validate_gate(gid, gtype, size, availability):
+                    continue
+
+                # Duplicate check
+                from constraint_checking import check_duplicate_gate
+                if not check_duplicate_gate(lst, gid):
+                    continue
+
+                try:
+                    lst.append(Gate(gid, terminal, gtype, size, availability))
+                except Exception:
+                    print("Invalid gate entry skipped:", data)
+                    continue
+    except FileNotFoundError:
         pass
 
     return lst
@@ -46,41 +62,7 @@ def display_gates():
 
 # ---------------- WRITE ----------------
 def writeData():
-
-    n = int(input("Number of gates: "))
-    existing = load_gates()
-
-    new_gates_added = False
-
-    with open("gates.csv", "a") as f:
-
-        for _ in range(n):
-
-            gid = input("Gate ID: ")
-            terminal = input("Terminal: ")
-            gtype = input("Type (Domestic/International): ")
-            size = input("Max Size (Wide/Narrow): ")
-            availability = "Free"
-
-            if not validate_gate(gid, gtype, size, availability):
-                continue
-
-            if any(g.gate_id == gid for g in existing):
-                print("Duplicate Gate ID")
-                continue
-
-            f.write(",".join([gid, terminal, gtype, size, availability]) + "\n")
-
-            existing.append(Gate(gid, terminal, gtype, size, availability))
-            new_gates_added = True
-
-    print("- Gates added")
-
-    # - TRIGGER (same as aircraft)
-    if new_gates_added:
-        print("- New gates available → reallocating flights")
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+    print("Gates are static; adding gates at runtime is not supported.")
 
 
 # ---------------- REMOVE ----------------
@@ -162,7 +144,14 @@ def update_gate():
 
     old_availability = target.availability
 
-    # - APPLY CHANGES
+    # - APPLY CHANGES: validate prospective values first
+    new_gtype = gtype if gtype else target.gate_type
+    new_size = size if size else target.max_aircraft_size
+    new_availability = availability if availability else target.availability
+
+    if not validate_gate(target.gate_id, new_gtype, new_size, new_availability):
+        return
+
     if terminal:
         target.terminal = terminal
 

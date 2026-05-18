@@ -1,4 +1,5 @@
 from validation import validate_resource
+from constraint_checking import check_duplicate_resource
 
 
 class Resource:
@@ -72,8 +73,7 @@ def writeData():
                 print("Invalid input. Skipping...\n")
                 continue
 
-            if any(r.res_id == res_id for r in existing):
-                print("Duplicate Resource ID not allowed")
+            if not check_duplicate_resource(existing, res_id):
                 continue
 
             file.write(",".join([res_id, res_type, status]) + "\n")
@@ -168,14 +168,17 @@ def update_resource():
 
     old_status = target.status
 
-    # - APPLY CHANGES
+    # - APPLY CHANGES: validate prospective values
+    new_type = rtype if rtype else target.res_type
+    new_status = status if status else target.status
+
+    if not validate_resource(target.res_id, new_type, new_status):
+        return
+
     if rtype:
         target.res_type = rtype
 
     if status:
-        if status not in ["Available", "In Use"]:
-            print("Invalid status")
-            return
         target.status = status
 
     # - SAVE FILE

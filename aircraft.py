@@ -1,3 +1,7 @@
+from constraint_checking import check_duplicate_aircraft
+from validation import validate_aircraft_fields
+
+
 class Aircraft:
 
     def __init__(self, aid, atype, location, maintenance, tat):
@@ -59,20 +63,10 @@ def writeData():
             maintenance = input("Maintenance (Yes/No): ")
             tat = input("Turnaround Time: ")
 
-            if not tat.isdigit():
-                print("Invalid turnaround time")
+            if not validate_aircraft_fields(atype, maintenance, tat):
                 continue
 
-            if atype not in ["Wide", "Narrow"]:
-                print("Invalid type. Must be Wide or Narrow")
-                continue
-
-            if maintenance not in ["Yes", "No"]:
-                print("Invalid maintenance value. Must be Yes or No")
-                continue
-
-            if any(a.aircraft_id == aid for a in existing):
-                print("Duplicate Aircraft ID")
+            if not check_duplicate_aircraft(existing, aid):
                 continue
 
             f.write(",".join([aid, atype, location, maintenance, tat]) + "\n")
@@ -109,26 +103,24 @@ def update_aircraft():
     maintenance = input(f"Maintenance (Yes/No) [{target.maintenance}]: ").strip()
     tat = input(f"Turnaround Time [{target.turnaround_time}]: ").strip()
 
-    # 🔹 APPLY CHANGES
+    # 🔹 APPLY CHANGES — validate prospective values first
+    new_atype = atype if atype else target.atype
+    new_maintenance = maintenance if maintenance else target.maintenance
+    new_tat = tat if tat else str(target.turnaround_time)
+
+    if not validate_aircraft_fields(new_atype, new_maintenance, new_tat):
+        return
+
     if atype:
-        if atype not in ["Wide", "Narrow"]:
-            print("Invalid type")
-            return
         target.atype = atype
 
     if location:
         target.location = location
 
     if maintenance:
-        if maintenance not in ["Yes", "No"]:
-            print("Invalid maintenance value")
-            return
         target.maintenance = maintenance
 
     if tat:
-        if not tat.isdigit():
-            print("Invalid turnaround time")
-            return
         target.turnaround_time = int(tat)
 
     # 🔹 SAVE FILE

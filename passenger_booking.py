@@ -1,6 +1,6 @@
 from flights import load_flights
 from passenger import load_passengers, seats_used
-from validation import validate_passenger_booking
+from validation import validate_passenger_booking, validate_time_range
 from passenger_allocation import allocate_passengers
 from passenger_search import search_flights
 
@@ -14,8 +14,7 @@ def view_scheduled_flights():
     start = input("From time: ")
     end = input("To time: ")
 
-    if not start.isdigit() or not end.isdigit():
-        print("- Invalid time range")
+    if not validate_time_range(start, end):
         return
 
     matches = search_flights(flights, time_from=int(start), time_to=int(end))
@@ -63,8 +62,7 @@ def book_flight():
         start = input("From time: ")
         end = input("To time: ")
 
-        if not start.isdigit() or not end.isdigit():
-            print("- Invalid time range")
+        if not validate_time_range(start, end):
             return
 
         matches = search_flights(

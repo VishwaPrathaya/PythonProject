@@ -1,3 +1,4 @@
+from validation import validate_passenger_status
 class Passenger:
 
     def __init__(self, pid, name, fno, seat, ticket_class="Economy", status="Booked"):
@@ -52,7 +53,7 @@ def seats_used(fno):
 def writeData():
 
     from flights import load_flights
-    from validation import validate_passenger_booking
+    from validation import validate_passenger_booking, validate_ticket_class, validate_passenger_status
     from passenger_allocation import allocate_passengers
 
     n = int(input("Passenger count: "))
@@ -71,6 +72,12 @@ def writeData():
             seat = input("Seat No: ")
             ticket_class = input("Class (Economy/Business/First): ")
             status = input("Status (Booked/Checked-In/Boarded): ")
+
+            if not validate_ticket_class(ticket_class):
+                continue
+
+            if not validate_passenger_status(status):
+                continue
 
             selected = next((fl for fl in flights if fl.fno == fno), None)
 
@@ -159,6 +166,8 @@ def update_passenger():
         target.seat = seat
 
     if status:
+        if not validate_passenger_status(status):
+            return
         target.status = status
 
     # - SAVE FILE

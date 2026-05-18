@@ -1,6 +1,7 @@
 # Class Runway to store info about runways
 
 from validation import validate_runway
+from constraint_checking import check_duplicate_runway, check_runway_maintenance_consistency
 
 
 class Runway:
@@ -33,7 +34,25 @@ def load_runways():
                 if len(data) != 8:
                     continue
 
-                runways.append(Runway(*data))
+                length, availability, assigned_flight, runway_id, usage, maintenance_window, maintenance_from, maintenance_to = data
+
+                # Field-level validation
+                if not validate_runway(length, availability, usage, maintenance_window):
+                    # validate_runway prints the error
+                    continue
+
+                # Maintenance consistency + duplicate checks
+                if not check_runway_maintenance_consistency(maintenance_window, maintenance_from, maintenance_to):
+                    continue
+
+                if not check_duplicate_runway(runways, runway_id):
+                    continue
+
+                try:
+                    runways.append(Runway(length, availability, assigned_flight, runway_id, usage, maintenance_window, maintenance_from, maintenance_to))
+                except Exception as e:
+                    print(f"Invalid runway entry skipped: {data} -> {e}")
+                    continue
 
     except FileNotFoundError:
         pass
@@ -56,63 +75,9 @@ def display_runways():
         print(f"{r.runway_id} | {r.length} | {r.availability} | {r.assigned_flight} | {r.usage} | {r.maintenance_window}")
 
 
-# ---------------- WRITE ----------------
+# Adding runways at runtime is not supported; runways are treated as static data.
 def writeData():
-
-    print("Runway Module")
-    n = int(input("Enter number of runways: "))
-    existing = load_runways()
-
-    new_added = False
-
-    with open("runwaydetails.csv", "a") as file:
-
-        for _ in range(n):
-
-            runway_id = input("Runway ID: ")
-            length = input("Length: ")
-            availability = input("Availability (Free/Occupied): ")
-            assigned_flight = "NA"
-            usage = input("Usage (Takeoff/Landing/Both): ")
-            maintenance_window = input("Maintenance (Yes/No): ")
-            maintenance_from = input("From (NA if none): ")
-            maintenance_to = input("To (NA if none): ")
-
-            if not validate_runway(length, availability, usage, maintenance_window):
-                continue
-
-            if any(r.runway_id == runway_id for r in existing):
-                print("Duplicate runway")
-                continue
-
-            if maintenance_window == "No" and (maintenance_from != "NA" or maintenance_to != "NA"):
-                print("Invalid maintenance data")
-                continue
-
-            if maintenance_window == "Yes" and (maintenance_from == "NA" or maintenance_to == "NA"):
-                print("Missing maintenance time")
-                continue
-
-            file.write(",".join([
-                length, availability, assigned_flight,
-                runway_id, usage, maintenance_window,
-                maintenance_from, maintenance_to
-            ]) + "\n")
-
-            existing.append(Runway(
-                length, availability, assigned_flight,
-                runway_id, usage, maintenance_window,
-                maintenance_from, maintenance_to
-            ))
-
-            new_added = True
-
-    print("- Runways added")
-
-    # - SAME AS AIRCRAFT / GATE
-    if new_added:
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+    print("Runways are static; adding runways at runtime is not supported.")
 
 
 # ---------------- REMOVE ----------------
@@ -189,6 +154,14 @@ def update_runway():
     availability = input(f"Availability [{target.availability}]: ").strip()
     usage = input(f"Usage [{target.usage}]: ").strip()
     maintenance = input(f"Maintenance [{target.maintenance_window}]: ").strip()
+
+    # validate prospective values first
+    new_availability = availability if availability else target.availability
+    new_usage = usage if usage else target.usage
+    new_maintenance = maintenance if maintenance else target.maintenance_window
+
+    if not validate_runway(str(target.length), new_availability, new_usage, new_maintenance):
+        return
 
     if availability:
         target.availability = availability

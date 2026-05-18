@@ -1,4 +1,4 @@
-from validation import validate_flight
+from validation import validate_flight, validate_numeric, validate_flight_type
 from constraint_checking import validate_flight_constraints
 from allocation_engine import allocate_flight
 
@@ -198,14 +198,12 @@ def update_flight():
         target.destination = destination
 
     if arr:
-        if not arr.isdigit():
-            print("Invalid arrival time")
+        if not validate_numeric(arr, "Invalid arrival time"):
             return
         target.arr = arr
 
     if dep:
-        if not dep.isdigit():
-            print("Invalid departure time")
+        if not validate_numeric(dep, "Invalid departure time"):
             return
         target.dep = dep
 
@@ -213,14 +211,12 @@ def update_flight():
         target.date = date
 
     if flight_type:
-        if flight_type not in ["Domestic", "International"]:
-            print("Invalid type")
+        if not validate_flight_type(flight_type):
             return
         target.flight_type = flight_type
 
     if capacity:
-        if not capacity.isdigit():
-            print("Invalid capacity")
+        if not validate_numeric(capacity, "Invalid capacity"):
             return
         target.capacity = int(capacity)
 

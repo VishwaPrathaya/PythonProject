@@ -49,6 +49,25 @@ def validate_aircraft(aircraft_id, atype):
 
     return True
 
+
+def validate_aircraft_fields(atype, maintenance, tat):
+    # Turnaround time must be numeric
+    if not str(tat).isdigit():
+        print("Invalid turnaround time")
+        return False
+
+    # Aircraft type must be one of allowed values
+    if atype not in ["Wide", "Narrow"]:
+        print("Invalid type. Must be Wide or Narrow")
+        return False
+
+    # Maintenance flag must be Yes/No
+    if maintenance not in ["Yes", "No"]:
+        print("Invalid maintenance value. Must be Yes or No")
+        return False
+
+    return True
+
 # -------------------- CREW --------------------
 
 def validate_crew(crew_id, name, role):
@@ -192,4 +211,67 @@ def validate_disruption(disruption_id, flight_no, dtype, status):
         print("Invalid status")
         return False
 
+    return True
+
+
+def validate_numeric(value, message):
+    if not str(value).isdigit():
+        print(message)
+        return False
+    return True
+
+
+def validate_time_range(start, end):
+    if not str(start).isdigit() or not str(end).isdigit():
+        print("- Invalid time range")
+        return False
+    return True
+
+
+def validate_crew_hours(duty, rest):
+    if not str(duty).isdigit() or not str(rest).isdigit():
+        print("Duty/Rest must be numbers")
+        return False
+    return True
+
+
+def validate_flight_type(ftype):
+    if ftype not in ["Domestic", "International"]:
+        print("Invalid type")
+        return False
+    return True
+
+
+def validate_ticket_class(tclass):
+    if tclass not in ["Economy", "Business", "First"]:
+        print("Invalid ticket class")
+        return False
+    return True
+
+
+def validate_passenger_status(status):
+    if status not in ["Booked", "Checked-In", "Boarded"]:
+        print("Invalid passenger status")
+        return False
+    return True
+
+
+def validate_disruption_type(dtype):
+    if dtype not in ["Delay", "Technical", "Weather", "Cancellation"]:
+        print("Invalid disruption type")
+        return False
+    return True
+
+
+def validate_disruption_status(status):
+    if status not in ["Resolved", "Pending"]:
+        print("Invalid disruption status")
+        return False
+    return True
+
+
+def validate_priority(priority):
+    if priority not in ["High", "Medium", "Low"]:
+        print("Invalid priority")
+        return False
     return True

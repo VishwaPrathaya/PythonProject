@@ -122,12 +122,15 @@ def check_crew_constraints(crew_list, crew_id, required_aircraft):
 def check_gate_constraints(gate, aircraft_size, flight_type):
 
     if gate.availability != "Free":
+        print("Gate not available")
         return False
 
     if gate.max_aircraft_size != aircraft_size:
+        print("Gate size incompatible")
         return False
 
     if flight_type == "International" and gate.gate_type != "International":
+        print("Gate not suitable for international flights")
         return False
 
     return True
@@ -168,3 +171,51 @@ def check_resource_constraints(resource_list, res_id):
 
     print("Resource not found")
     return False
+
+
+# ---------------- DUPLICATE / MODULE-LEVEL CHECKS ----------------
+def check_duplicate_aircraft(aircraft_list, aircraft_id):
+    if any(a.aircraft_id == aircraft_id for a in aircraft_list):
+        print("Duplicate Aircraft ID")
+        return False
+    return True
+
+
+def check_duplicate_crew(crew_list, crew_id):
+    if any(c.crew_id == crew_id for c in crew_list):
+        print("Duplicate Crew ID")
+        return False
+    return True
+
+
+def check_duplicate_gate(gate_list, gate_id):
+    if any(g.gate_id == gate_id for g in gate_list):
+        print("Duplicate Gate ID")
+        return False
+    return True
+
+
+def check_duplicate_resource(resource_list, res_id):
+    if any(r.res_id == res_id for r in resource_list):
+        print("Duplicate Resource ID not allowed")
+        return False
+    return True
+
+
+def check_duplicate_runway(runway_list, runway_id):
+    if any(r.runway_id == runway_id for r in runway_list):
+        print("Duplicate runway")
+        return False
+    return True
+
+
+def check_runway_maintenance_consistency(maintenance_window, maintenance_from, maintenance_to):
+    if maintenance_window == "No" and (maintenance_from != "NA" or maintenance_to != "NA"):
+        print("Invalid maintenance data")
+        return False
+
+    if maintenance_window == "Yes" and (maintenance_from == "NA" or maintenance_to == "NA"):
+        print("Missing maintenance time")
+        return False
+
+    return True

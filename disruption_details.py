@@ -1,6 +1,6 @@
 # Class Disruption to store disruption details
 
-from validation import validate_disruption
+from validation import validate_disruption, validate_disruption_type, validate_disruption_status, validate_priority
 
 
 class Disruption:
@@ -185,12 +185,18 @@ def update_disruption():
     old_status = target.status
 
     if dtype:
+        if not validate_disruption_type(dtype):
+            return
         target.disruption_type = dtype
 
     if status:
+        if not validate_disruption_status(status):
+            return
         target.status = status
 
     if priority:
+        if not validate_priority(priority):
+            return
         target.priority = priority
 
     #  SAVE FILE

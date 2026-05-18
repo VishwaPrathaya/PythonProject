@@ -1,5 +1,5 @@
-from validation import validate_crew
-from constraint_checking import check_crew_constraints
+from validation import validate_crew, validate_crew_hours, validate_numeric
+from constraint_checking import check_crew_constraints, check_duplicate_crew
 
 
 class Crew:
@@ -71,14 +71,12 @@ def writeData():
             duty = input("Duty Hours: ")
             rest = input("Rest Hours: ")
 
-            # 🔹 simple validation only
-            if not duty.isdigit() or not rest.isdigit():
-                print("Duty/Rest must be numbers")
+            # 🔹 simple validation only (moved to validation module)
+            if not validate_crew_hours(duty, rest):
                 continue
 
-            # optional duplicate check
-            if any(c.crew_id == cid for c in records):
-                print("Duplicate Crew ID")
+            # optional duplicate check (centralized)
+            if not check_duplicate_crew(records, cid):
                 continue
 
             f.write(",".join([
@@ -182,14 +180,12 @@ def update_crew():
         target.status = status
 
     if duty:
-        if not duty.isdigit():
-            print("Invalid duty hours")
+        if not validate_numeric(duty, "Invalid duty hours"):
             return
         target.duty_hours = duty
 
     if rest:
-        if not rest.isdigit():
-            print("Invalid rest hours")
+        if not validate_numeric(rest, "Invalid rest hours"):
             return
         target.rest_hours = rest
 
