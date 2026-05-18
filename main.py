@@ -8,6 +8,7 @@ import disruption_details
 import optimization
 import aircraft
 import counters
+import conflict_resolution
 
 
 def main():
@@ -26,7 +27,8 @@ def main():
         print("9. Disruption Module")
         print("10. Display All Data")
         print("11. Run Cleanup (release expired allocations)")
-        print("12. Exit")
+        print("12. Resolve Conflicts")
+        print("13. Exit")
 
         try:
             ch = int(input("\nEnter your choice: "))
@@ -275,13 +277,19 @@ def main():
             ground_resources.display_resources()
             disruption_details.display_disruptions()
 
-        # -------- EXIT --------
+        # -------- CLEANUP --------
         elif ch == 11:
             from allocation_engine import release_expired_allocations
             print("Running cleanup: releasing expired allocations...")
             release_expired_allocations()
 
+        # -------- CONFLICT RESOLUTION --------
         elif ch == 12:
+            print("Running conflict resolution...")
+            conflict_resolution.resolve_conflicts()
+
+        # -------- EXIT --------
+        elif ch == 13:
             print("Exiting system...")
             break
 

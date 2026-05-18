@@ -111,9 +111,9 @@ def writeData():
 
             print(" Flight added successfully")
 
-            
             # AUTO ALLOCATION TRIGGER
-            allocate_flight(new_flight)
+            from allocation_engine import refresh_flight_allocation
+            refresh_flight_allocation(new_flight.fno)
 
     display_flights()
 

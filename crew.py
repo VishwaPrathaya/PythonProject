@@ -226,3 +226,6 @@ def update_crew():
         for fno in affected:
             print(f" Removing full allocation for flight {fno}")
             remove_allocation_for_flight(fno)
+
+        print(" Attempting to allocate pending flights after crew release...")
+        try_schedule_pending_flights()

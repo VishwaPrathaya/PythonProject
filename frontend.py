@@ -10,6 +10,7 @@ from allocation_engine import (
     try_schedule_pending_flights,
     release_expired_allocations,
 )
+from conflict_resolution import resolve_conflicts
 from passenger_allocation import allocate_passengers
 import disruption_details
 import flights
@@ -534,6 +535,10 @@ def actions_page(params=None, message=None):
         '<input type="hidden" name="action" value="schedule_pending">'
         '<button type="submit">Allocate Pending Flights</button>'
         '</form>'
+        '<form method="post">'
+        '<input type="hidden" name="action" value="resolve_conflicts">'
+        '<button type="submit">Resolve Resource Conflicts</button>'
+        '</form>'
     )
     return render_page('System Actions', content, message)
 
@@ -546,6 +551,9 @@ def handle_action(params):
     if action == 'schedule_pending':
         try_schedule_pending_flights()
         return True, 'Pending flights allocation attempted.'
+    if action == 'resolve_conflicts':
+        resolve_conflicts()
+        return True, 'Conflict resolution completed.'
     return False, 'Unknown action.'
 
 

@@ -68,6 +68,7 @@ def writeData():
     flights = load_flights()
 
     new_added = False
+    changed_flights = set()
 
     with open("passenger.csv", "a") as f:
 
@@ -94,13 +95,19 @@ def writeData():
             f.write(",".join([pid, name, fno, seat, ticket_class, status, "NA"]) + "\n")
 
             existing.append(Passenger(pid, name, fno, seat, ticket_class, status, "NA"))
+            changed_flights.add(fno)
             new_added = True
 
             print("- Passenger added")
 
-    # - TRIGGER (
     if new_added:
-        print("- Passenger data updated → updating flight status")
+        print("- Passenger data updated → re-evaluating allocations")
+
+        from allocation_engine import refresh_flight_allocation
+
+        for fno in sorted(changed_flights):
+            refresh_flight_allocation(fno)
+
         allocate_passengers()
 
 

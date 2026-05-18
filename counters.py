@@ -62,6 +62,7 @@ def writeData():
 
     n = int(input("Enter number of counters to add: "))
     existing = load_counters()
+    new_added = False
 
     with open("counters.csv", "a") as f:
         for i in range(n):
@@ -89,6 +90,12 @@ def writeData():
             existing.append(counter)
             f.write(",".join([cid, gate_id, terminal, service_type, availability, str(counter.capacity)]) + "\n")
             print(f"Counter {cid} added.")
+            new_added = True
+
+    if new_added:
+        print("- New counters available → reallocating pending flights")
+        from allocation_engine import try_schedule_pending_flights
+        try_schedule_pending_flights()
 
 
 def add_counter():
@@ -139,6 +146,9 @@ def remove_counter():
             f.write(",".join([c.counter_id, c.gate_id, c.terminal, c.service_type, c.availability, str(c.capacity)]) + "\n")
 
     print(f"Counter {cid} removed successfully")
+    print("- Reallocating pending flights...")
+    from allocation_engine import try_schedule_pending_flights
+    try_schedule_pending_flights()
 
 
 # ---------------- UPDATE ----------------
@@ -170,6 +180,8 @@ def update_counter():
         target.terminal = terminal
     if service_type:
         target.service_type = service_type
+    old_availability = target.availability
+
     if availability:
         target.availability = availability
 
@@ -183,6 +195,22 @@ def update_counter():
 
     print(f"Counter {cid} updated successfully")
 
+    from allocation_engine import load_allocations, remove_allocation_for_flight, try_schedule_pending_flights
+    allocations = load_allocations()
+
+    if target.availability != "Available" and old_availability == "Available":
+        print(" Counter unavailable → releasing affected allocations")
+        for fno, data in allocations.items():
+            if len(data) >= 7:
+                counter_ids = data[6].split("|")
+                if cid in counter_ids:
+                    remove_allocation_for_flight(fno)
+        print("- Reallocating pending flights...")
+        try_schedule_pending_flights()
+    else:
+        print("- Reallocating pending flights...")
+        try_schedule_pending_flights()
+
 
 # ---------------- HELPERS ----------------
 def get_available_counters(gate_id, counters):
@@ -192,4 +220,4 @@ def get_available_counters(gate_id, counters):
 def update_counter_file(counters):
     with open("counters.csv", "w") as f:
         for c in counters:
-            f.write(",".join([c.counter_id, c.gate_id, c.terminal, c.service_type, c.availability]) + "\n")
+            f.write(",".join([c.counter_id, c.gate_id, c.terminal, c.service_type, c.availability, str(c.capacity)]) + "\n")

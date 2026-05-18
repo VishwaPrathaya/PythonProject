@@ -73,7 +73,13 @@ def offer_rebooking_for_cancelled_flight(fno):
                 p.counter_id
             ]) + "\n")
 
-    # trigger re-allocation to assign counters for any newly rebooked passengers
+    # trigger reallocation for all flights affected by rebooking
+    from allocation_engine import refresh_flight_allocation
+    affected_flights = {p.fno for p in passengers if p.fno != fno}
+
+    for flight_no in sorted(affected_flights):
+        refresh_flight_allocation(flight_no)
+
     allocate_passengers()
 
 
@@ -242,30 +248,5 @@ def book_flight():
     print(f"   Seat   : {seat}")
 
     # ---------------- AUTO ALLOCATION TRIGGER ----------------
-    # assign counter from existing allocation if present
-    from allocation_engine import load_allocations
-    allocs = load_allocations()
-    alloc = allocs.get(selected.fno)
-    assigned_counter = "NA"
-    if alloc and len(alloc) > 6:
-        # allocation stores counters as pipe-separated ids
-        assigned_counter = alloc[6].split("|")[0]
-
-    if assigned_counter != "NA":
-        # update the newly added passenger record with counter assignment
-        from passenger import load_passengers
-        passengers = load_passengers()
-        for p in passengers:
-            if p.pid == pid and p.fno == selected.fno:
-                p.counter_id = assigned_counter
-        with open("passenger.csv", "w") as pf:
-            for p in passengers:
-                pf.write(",".join([
-                    p.pid, p.name, p.fno,
-                    p.seat, p.ticket_class,
-                    p.status, p.counter_id
-                ]) + "\n")
-
-        print(f"- Assigned counter {assigned_counter} to passenger {pid}")
-
-    allocate_passengers()
+    from allocation_engine import refresh_flight_allocation
+    refresh_flight_allocation(selected.fno)

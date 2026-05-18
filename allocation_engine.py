@@ -429,7 +429,24 @@ def try_schedule_pending_flights():
         allocate_flight(flight)
 
 
-def remove_allocation_for_flight(fno):
+def refresh_flight_allocation(fno):
+    from flights import load_flights
+
+    flights = load_flights()
+    flight = next((f for f in flights if f.fno == fno), None)
+
+    if not flight:
+        print(f"Flight {fno} not found for refresh")
+        return
+
+    allocations = load_allocations()
+    if fno in allocations:
+        remove_allocation_for_flight(fno, auto_reallocate=False)
+
+    allocate_flight(flight)
+
+
+def remove_allocation_for_flight(fno, auto_reallocate=True):
 
     allocations = load_allocations()
 
@@ -496,15 +513,17 @@ def remove_allocation_for_flight(fno):
             if not line.startswith(fno + ","):
                 f.write(line)
 
-    from passenger_allocation import allocate_passengers
-    allocate_passengers()
+    if auto_reallocate:
+        from passenger_allocation import allocate_passengers
+        allocate_passengers()
 
-    print(f" Allocation for flight {fno} removed")
+        print(f" Allocation for flight {fno} removed")
+        print(" Trigger: Resources released → Reallocation triggered")
 
-    print(" Trigger: Resources released → Reallocation triggered")
-
-    # Attempt to allocate any pending flights now that resources were freed
-    try_schedule_pending_flights()
+        # Attempt to allocate any pending flights now that resources were freed
+        try_schedule_pending_flights()
+    else:
+        print(f" Allocation for flight {fno} removed")
 
 
 def handle_cancellation(fno):

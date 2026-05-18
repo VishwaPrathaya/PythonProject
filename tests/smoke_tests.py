@@ -51,7 +51,7 @@ def assertions():
     counters = BASE.joinpath('counters.csv').read_text().strip().splitlines()
     assert len(counters) >= 2, f'Expected at least 2 counters, found {len(counters)}'
     # check counters occupancy
-    occ = [line for line in counters if line.strip().endswith('Occupied')]
+    occ = [line for line in counters if len(line.split(',')) >= 5 and line.split(',')[4] == 'Occupied']
     assert len(occ) >= 1, 'No counters marked Occupied after allocation'
 
     # passengers should have counter assignments
