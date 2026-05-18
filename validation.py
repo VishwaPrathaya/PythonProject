@@ -1,7 +1,5 @@
 # Validation Module
 
-from passenger import load_passengers, seats_used
-
 # -------------------- FLIGHT --------------------
 def validate_flight(flight_id, arrival, departure, flight_type, date, existing_flights):
 
@@ -156,6 +154,29 @@ def validate_gate(gate_id, gate_type, max_aircraft_size, availability):
 
     return True
 
+def validate_counter(counter_id, gate_id, terminal, service_type, availability):
+
+    if counter_id.strip() == "":
+        print("Counter ID cannot be empty")
+        return False
+
+    if gate_id.strip() == "":
+        print("Gate ID cannot be empty for counter")
+        return False
+
+    if terminal.strip() == "":
+        print("Counter terminal cannot be empty")
+        return False
+
+    if service_type not in ["Check-In", "Boarding"]:
+        print("Invalid service type for counter")
+        return False
+
+    if availability not in ["Available", "Occupied"]:
+        print("Invalid counter availability")
+        return False
+
+    return True
 
 # -------------------- RUNWAY --------------------
 

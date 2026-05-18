@@ -5,6 +5,122 @@ from passenger_allocation import allocate_passengers
 from passenger_search import search_flights
 
 
+def offer_rebooking_for_cancelled_flight(fno):
+    """Offer rebooking to passengers booked on cancelled flight `fno`.
+
+    Interactive: asks each passenger whether they want to be rebooked to a suitable alternative.
+    """
+    flights = load_flights()
+    passengers = load_passengers()
+
+    original = next((f for f in flights if f.fno == fno), None)
+    if not original:
+        print(f"Original flight {fno} not found for rebooking")
+        return
+
+    affected = [p for p in passengers if p.fno == fno]
+    if not affected:
+        print(f"No passengers booked on flight {fno}")
+        return
+
+    # candidate flights: same origin/destination and not the cancelled one
+    candidates = [fl for fl in flights if fl.fno != fno and fl.origin == original.origin and fl.destination == original.destination]
+
+    for p in affected:
+        print(f"\nPassenger {p.pid} | {p.name} | Seat {p.seat}")
+        choice = input("Offer rebooking to other flights? (yes/no): ")
+        if choice.lower() != "yes":
+            continue
+
+        available = []
+        for fl in candidates:
+            used = seats_used(fl.fno)
+            if used < fl.capacity:
+                available.append(fl)
+
+        if not available:
+            print(" No alternative flights with available seats found.")
+            continue
+
+        print("Available alternatives:")
+        for fl in available:
+            print(f"{fl.fno} | {fl.origin} -> {fl.destination} | Dep: {fl.dep} | Seats used: {seats_used(fl.fno)}/{fl.capacity}")
+
+        newf = input("Choose Flight ID to rebook (or blank to skip): ")
+        if not newf:
+            continue
+
+        target = next((fl for fl in available if fl.fno == newf), None)
+        if not target:
+            print("Invalid flight chosen. Skipping passenger.")
+            continue
+
+        # assign a new seat id (simple incremental rebook seat)
+        new_seat = f"RB{seats_used(target.fno) + 1}"
+
+        # update passenger in memory
+        p.fno = target.fno
+        p.seat = new_seat
+
+        print(f" Passenger {p.pid} rebooked to {target.fno} seat {new_seat}")
+
+    # persist passenger file
+    with open("passenger.csv", "w") as pf:
+        for p in passengers:
+            pf.write(",".join([
+                p.pid, p.name, p.fno,
+                p.seat, p.ticket_class, p.status,
+                p.counter_id
+            ]) + "\n")
+
+    # trigger re-allocation to assign counters for any newly rebooked passengers
+    allocate_passengers()
+
+
+def offer_rebooking_notifications(fno):
+    """Create operator notifications for passengers on cancelled flight `fno`.
+
+    Writes `rebooking_notifications.csv` entries with suggested alternative flight IDs
+    so an operator can review and approve rebookings.
+    """
+    flights = load_flights()
+    passengers = load_passengers()
+
+    original = next((f for f in flights if f.fno == fno), None)
+    if not original:
+        print(f"Original flight {fno} not found for rebooking notifications")
+        return
+
+    affected = [p for p in passengers if p.fno == fno]
+    if not affected:
+        print(f"No passengers booked on flight {fno}")
+        return
+
+    # candidate flights: same origin/destination and not the cancelled one
+    candidates = [fl for fl in flights if fl.fno != fno and fl.origin == original.origin and fl.destination == original.destination]
+
+    notif_lines = []
+    for p in affected:
+        suggestions = []
+        for fl in candidates:
+            used = seats_used(fl.fno)
+            if used < fl.capacity:
+                suggestions.append(fl.fno)
+
+        line = ",".join([
+            p.pid, p.name, p.fno, "|".join(suggestions) if suggestions else "",
+            "Pending"
+        ])
+        notif_lines.append(line)
+
+    # append notifications file
+    with open("rebooking_notifications.csv", "a") as nf:
+        for l in notif_lines:
+            nf.write(l + "\n")
+
+    print(f"Wrote {len(notif_lines)} rebooking notifications to rebooking_notifications.csv")
+
+
 # ---------------- VIEW SCHEDULED FLIGHTS (TIME RANGE) ----------------
 def view_scheduled_flights():
 
@@ -119,11 +235,37 @@ def book_flight():
 
     # ---------------- SAVE BOOKING ----------------
     with open("passenger.csv", "a") as f:
-        f.write(f"{pid},{name},{selected.fno},{seat},{ticket_class},Booked\n")
+        f.write(f"{pid},{name},{selected.fno},{seat},{ticket_class},Booked,NA\n")
 
     print(f"- Booking successful — {ticket_class} class")
     print(f"   Flight : {selected.fno} | {selected.origin} → {selected.destination}")
     print(f"   Seat   : {seat}")
 
     # ---------------- AUTO ALLOCATION TRIGGER ----------------
+    # assign counter from existing allocation if present
+    from allocation_engine import load_allocations
+    allocs = load_allocations()
+    alloc = allocs.get(selected.fno)
+    assigned_counter = "NA"
+    if alloc and len(alloc) > 6:
+        # allocation stores counters as pipe-separated ids
+        assigned_counter = alloc[6].split("|")[0]
+
+    if assigned_counter != "NA":
+        # update the newly added passenger record with counter assignment
+        from passenger import load_passengers
+        passengers = load_passengers()
+        for p in passengers:
+            if p.pid == pid and p.fno == selected.fno:
+                p.counter_id = assigned_counter
+        with open("passenger.csv", "w") as pf:
+            for p in passengers:
+                pf.write(",".join([
+                    p.pid, p.name, p.fno,
+                    p.seat, p.ticket_class,
+                    p.status, p.counter_id
+                ]) + "\n")
+
+        print(f"- Assigned counter {assigned_counter} to passenger {pid}")
+
     allocate_passengers()

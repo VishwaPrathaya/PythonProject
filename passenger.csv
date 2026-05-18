@@ -1,4 +1,3 @@
-P101,Priya,F101,E20,Economy,Booked
-P201,Vaidhehi,F103,B07,Business,Booked
-P104,Dharshana,F102,F09,First,Booked
-P105,Navya,F102,B01,Economy,Booked
+P1,Passenger1,F2,RB1,Economy,Booked,G1-CNT1
+P2,Passenger2,F2,RB1,Economy,Booked,G1-CNT1
+P3,Passenger3,F2,RB1,Economy,Booked,G1-CNT1

@@ -1,13 +1,14 @@
 from validation import validate_passenger_status
 class Passenger:
 
-    def __init__(self, pid, name, fno, seat, ticket_class="Economy", status="Booked"):
+    def __init__(self, pid, name, fno, seat, ticket_class="Economy", status="Booked", counter_id="NA"):
         self.pid = pid
         self.name = name
         self.fno = fno
         self.seat = seat
         self.ticket_class = ticket_class
         self.status = status
+        self.counter_id = counter_id
 
 
 # ---------------- LOAD ----------------
@@ -20,10 +21,15 @@ def load_passengers():
             for line in f:
                 data = line.strip().split(",")
 
-                if len(data) not in [4, 6]:
-                    continue
-
-                lst.append(Passenger(*data))
+                if len(data) == 4:
+                    pid, name, fno, seat = data
+                    lst.append(Passenger(pid, name, fno, seat))
+                elif len(data) == 6:
+                    pid, name, fno, seat, ticket_class, status = data
+                    lst.append(Passenger(pid, name, fno, seat, ticket_class, status))
+                elif len(data) == 7:
+                    pid, name, fno, seat, ticket_class, status, counter_id = data
+                    lst.append(Passenger(pid, name, fno, seat, ticket_class, status, counter_id))
     except FileNotFoundError:
         pass
 
@@ -41,7 +47,8 @@ def display_passengers():
 
     print("\n--- PASSENGERS ---")
     for p in passengers:
-        print(f"{p.pid} | {p.name} | {p.fno} | {p.seat} | {p.ticket_class} | {p.status}")
+        counter_display = p.counter_id if p.counter_id != "NA" else "Unassigned"
+        print(f"{p.pid} | {p.name} | {p.fno} | {p.seat} | {p.ticket_class} | {p.status} | {counter_display}")
 
 
 # ---------------- SEAT COUNT ----------------
@@ -84,9 +91,9 @@ def writeData():
             if not validate_passenger_booking(pid, name, selected, seat, existing, seats_used):
                 continue
 
-            f.write(",".join([pid, name, fno, seat, ticket_class, status]) + "\n")
+            f.write(",".join([pid, name, fno, seat, ticket_class, status, "NA"]) + "\n")
 
-            existing.append(Passenger(pid, name, fno, seat, ticket_class, status))
+            existing.append(Passenger(pid, name, fno, seat, ticket_class, status, "NA"))
             new_added = True
 
             print("- Passenger added")
@@ -123,7 +130,8 @@ def remove_passenger():
         for p in updated:
             f.write(",".join([
                 p.pid, p.name, p.fno,
-                p.seat, p.ticket_class, p.status
+                p.seat, p.ticket_class, p.status,
+                p.counter_id
             ]) + "\n")
 
     print("- Passenger removed successfully")
@@ -175,7 +183,8 @@ def update_passenger():
         for p in passengers:
             f.write(",".join([
                 p.pid, p.name, p.fno,
-                p.seat, p.ticket_class, p.status
+                p.seat, p.ticket_class, p.status,
+                p.counter_id
             ]) + "\n")
 
     print(f"- Passenger {pid} updated successfully")

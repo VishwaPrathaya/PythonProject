@@ -3,6 +3,7 @@ from gates import load_gates
 from runways import load_runways
 from crew import load_crew
 from ground_resources import load_resources
+from counters import load_counters, update_counter_file, get_available_counters, create_counter
 
 
 
@@ -26,11 +27,11 @@ def load_allocations():
 
 
 # ---------------- SAVE ALLOCATION ----------------
-def save_allocation(fno, aircraft, gate, runway, crew_ids, resources):
+def save_allocation(fno, aircraft, gate, runway, crew_ids, resources, counter_id="NA"):
 
     with open("flight_allocations.csv", "a") as f:
         f.write(
-            f"{fno},{aircraft},{gate},{runway},{'|'.join(crew_ids)},{'|'.join(resources)}\n"
+            f"{fno},{aircraft},{gate},{runway},{'|'.join(crew_ids)},{'|'.join(resources)},{counter_id}\n"
         )
 
 
@@ -287,6 +288,58 @@ def allocate_flight(flight):
         print(f" No suitable gate available for flight {flight.fno}")
         return
 
+    # -------- COUNTER --------
+    from passenger import load_passengers
+
+    counters = load_counters()
+    available_counters = get_available_counters(selected_gate.gate_id, counters)
+    passenger_count = sum(1 for p in load_passengers() if p.fno == flight.fno)
+    required_capacity = max(1, passenger_count)
+
+    selected_counters = []
+    total_capacity = 0
+    for c in sorted(available_counters, key=lambda x: x.capacity, reverse=True):
+        selected_counters.append(c)
+        total_capacity += c.capacity
+        if total_capacity >= required_capacity:
+            break
+
+    if not selected_counters or total_capacity < required_capacity:
+        # try to auto-create counters to meet demand
+        needed = required_capacity - total_capacity
+        per_counter = 50
+        num_new = (needed + per_counter - 1) // per_counter
+
+        created = []
+        existing_ids = {c.counter_id for c in counters}
+        idx = 1
+        while len(created) < num_new:
+            candidate = f"{selected_gate.gate_id}-CNT{idx}"
+            idx += 1
+            if candidate in existing_ids:
+                continue
+            newc = create_counter(candidate, selected_gate.gate_id, getattr(selected_gate, 'terminal', 'T1'), 'Check-In', 'Available', per_counter)
+            if newc:
+                created.append(newc)
+                existing_ids.add(candidate)
+
+        if created:
+            counters.extend(created)
+            available_counters = get_available_counters(selected_gate.gate_id, counters)
+
+            # re-select counters with the new ones included
+            selected_counters = []
+            total_capacity = 0
+            for c in sorted(available_counters, key=lambda x: x.capacity, reverse=True):
+                selected_counters.append(c)
+                total_capacity += c.capacity
+                if total_capacity >= required_capacity:
+                    break
+
+        if total_capacity < required_capacity:
+            print(f" Not enough counter capacity at gate {selected_gate.gate_id} for flight {flight.fno} even after auto-creation")
+            return
+
     # -------- RUNWAY --------
     selected_runway = get_available_runway(flight, runways, allocations, flights)
     if not selected_runway:
@@ -310,6 +363,8 @@ def allocate_flight(flight):
 
     selected_runway.availability = "Occupied"
     selected_runway.assigned_flight = flight.fno
+    for c in selected_counters:
+        c.availability = "Occupied"
 
     for c in selected_crew:
         c.status = "Assigned"
@@ -331,6 +386,7 @@ def allocate_flight(flight):
     update_runway_file(runways)
     update_crew_file(crew_list)
     update_resource_file(resources)
+    update_counter_file(counters)
 
     save_allocation(
         flight.fno,
@@ -338,13 +394,18 @@ def allocate_flight(flight):
         selected_gate.gate_id,
         selected_runway.runway_id,
         [c.crew_id for c in selected_crew],
-        [r.res_id for r in selected_res]
+        [r.res_id for r in selected_res],
+        "|".join([c.counter_id for c in selected_counters])
     )
+
+    from passenger_allocation import allocate_passengers
+    allocate_passengers()
 
     print(f" Flight {flight.fno} fully allocated")
     print(f"   Aircraft : {aircraft.aircraft_id}")
     print(f"   Gate     : {selected_gate.gate_id}")
     print(f"   Runway   : {selected_runway.runway_id}")
+    print(f"   Counters : {[c.counter_id for c in selected_counters]}")
     print(f"   Crew     : {[c.crew_id for c in selected_crew]}")
     print(f"   Resources: {[r.res_id for r in selected_res]}")
 
@@ -382,11 +443,14 @@ def remove_allocation_for_flight(fno):
     runway_id = data[3]
     crew_ids = data[4].split("|") if len(data) > 4 else []
     res_ids = data[5].split("|") if len(data) > 5 else []
+    counter_ids = data[6].split("|") if len(data) > 6 else []
 
     gates = load_gates()
     runways = load_runways()
     crew_list = load_crew()
     resources = load_resources()
+
+    counters = load_counters()
 
     # FREE GATE
     for g in gates:
@@ -410,11 +474,18 @@ def remove_allocation_for_flight(fno):
         if r.res_id in res_ids:
             r.status = "Available"
 
+    # FREE COUNTERS
+    for cid in counter_ids:
+        for c in counters:
+            if c.counter_id == cid:
+                c.availability = "Available"
+
     # UPDATE FILES
     update_gate_file(gates)
     update_runway_file(runways)
     update_crew_file(crew_list)
     update_resource_file(resources)
+    update_counter_file(counters)
 
     # REMOVE FROM FILE
     with open("flight_allocations.csv", "r") as f:
@@ -425,9 +496,63 @@ def remove_allocation_for_flight(fno):
             if not line.startswith(fno + ","):
                 f.write(line)
 
+    from passenger_allocation import allocate_passengers
+    allocate_passengers()
+
     print(f" Allocation for flight {fno} removed")
 
     print(" Trigger: Resources released → Reallocation triggered")
 
-   
+    # Attempt to allocate any pending flights now that resources were freed
     try_schedule_pending_flights()
+
+
+def handle_cancellation(fno):
+    """Handle a flight cancellation: fully remove allocation and mark flight as removed from schedule.
+
+    Note: This function frees resources and then attempts reallocation of pending flights.
+    """
+    print(f"Handling cancellation for flight {fno}")
+    remove_allocation_for_flight(fno)
+    # Create operator rebooking notifications (non-interactive)
+    try:
+        from passenger_booking import offer_rebooking_notifications
+        offer_rebooking_notifications(fno)
+    except Exception:
+        pass
+
+
+def handle_delay(fno):
+    """Handle a flight delay: remove current allocation so resources become available,
+    then attempt to reallocate pending flights. The delayed flight remains in the
+    flights file so it can be reallocated later with updated times.
+    """
+    print(f"Handling delay for flight {fno}")
+    remove_allocation_for_flight(fno)
+
+
+def release_expired_allocations(current_time=None):
+    """Release allocations whose scheduled departure has passed.
+
+    `current_time` should be an int in HHMM (e.g. 1330). If omitted, uses local current time.
+    """
+    from flights import load_flights
+
+    if current_time is None:
+        from datetime import datetime
+        now = datetime.now()
+        current_time = now.hour * 100 + now.minute
+
+    flights = load_flights()
+    allocations = load_allocations()
+
+    for f in flights:
+        if f.fno in allocations:
+            try:
+                dep_time = int(f.dep)
+            except Exception:
+                continue
+
+            if dep_time <= current_time:
+                print(f"Releasing expired allocation for flight {f.fno} (dep {dep_time} <= now {current_time})")
+                remove_allocation_for_flight(f.fno)

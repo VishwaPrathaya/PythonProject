@@ -195,6 +195,13 @@ def check_duplicate_gate(gate_list, gate_id):
     return True
 
 
+def check_duplicate_counter(counter_list, counter_id):
+    if any(c.counter_id == counter_id for c in counter_list):
+        print("Duplicate Counter ID not allowed")
+        return False
+    return True
+
+
 def check_duplicate_resource(resource_list, res_id):
     if any(r.res_id == res_id for r in resource_list):
         print("Duplicate Resource ID not allowed")

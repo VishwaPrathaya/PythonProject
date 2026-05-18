@@ -1,8 +1,3 @@
-R1,FuelTruck,In Use
-R2,BaggageCart,In Use
-R3,CleaningCrew,In Use
-R4,BaggageCart,In Use
-R5,CleaningCrew,In Use
-R6,FuelTruck,Available
-R7,BaggageCart,Available
-R8,CleaningCrew,Available
+R1,Loader,In Use
+R2,PushBack,In Use
+R3,Tug,Available
