@@ -9,6 +9,9 @@ from allocation_engine import (
     handle_delay,
     try_schedule_pending_flights,
     release_expired_allocations,
+    system_rebalance,
+    get_recent_allocation_errors,
+    get_last_allocation_error,
 )
 from conflict_resolution import resolve_conflicts
 from passenger_allocation import allocate_passengers
@@ -41,52 +44,68 @@ from validation import (
     validate_runway,
     validate_resource,
 )
-from constraint_checking import validate_flight_constraints
+from constraint_checking import validate_flight_constraints, get_last_constraint_error
 
 
 def render_page(title, body, message=None):
     nav = (
-        '<nav style="margin-bottom:20px;">'
-        '<a href="/">Home</a> | '
-        '<a href="/flights">Flights</a> | '
-        '<a href="/passengers">Passengers</a> | '
-        '<a href="/counters">Counters</a> | '
-        '<a href="/aircraft">Aircraft</a> | '
-        '<a href="/crew">Crew</a> | '
-        '<a href="/gates">Gates</a> | '
-        '<a href="/runways">Runways</a> | '
-        '<a href="/resources">Ground</a> | '
-        '<a href="/disruptions">Disruptions</a> | '
-        '<a href="/notifications">Notifications</a> | '
+        '<nav class="topbar">'
+        '<a href="/">Dashboard</a>'
+        '<a href="/flights">Flights</a>'
+        '<a href="/passengers">Passengers</a>'
+        '<a href="/counters">Counters</a>'
+        '<a href="/aircraft">Aircraft</a>'
+        '<a href="/crew">Crew</a>'
+        '<a href="/gates">Gates</a>'
+        '<a href="/runways">Runways</a>'
+        '<a href="/resources">Resources</a>'
+        '<a href="/disruptions">Disruptions</a>'
+        '<a href="/notifications">Notifications</a>'
         '<a href="/actions">Actions</a>'
         '</nav>'
     )
-    status = f'<p style="color:green;">{html.escape(message)}</p>' if message else ''
+    status = f'<p class="status">{html.escape(message)}</p>' if message else ''
     page = (
         '<!DOCTYPE html><html><head><meta charset="utf-8">'
         f'<title>{html.escape(title)}</title>'
         '<style>'
-        'body{font-family:Arial,sans-serif;padding:20px;background:#f4f6f8;color:#333;}'
-        'h1{margin-top:0;color:#2a4365;}'
-        'nav a{color:#2b6cb0;text-decoration:none;margin-right:12px;}'
-        'nav a:hover{text-decoration:underline;}'
-        'section{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}'
-        'table{border-collapse:collapse;width:100%;margin-top:16px;}'
-        'th,td{border:1px solid #e2e8f0;padding:10px;text-align:left;}'
-        'th{background:#edf2f7;}'
-        'tr:nth-child(even){background:#f7fafc;}'
-        'input,select,button,textarea{width:100%;padding:10px;margin:6px 0;border:1px solid #cbd5e0;border-radius:6px;box-sizing:border-box;}'
-        'button{background:#2b6cb0;color:#fff;border:none;cursor:pointer;}'
-        'button:hover{background:#2c5282;}'
-        '.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}'
-        '.full{grid-column:span 2;}'
-        '.hero{padding:20px;background:#2b6cb0;color:#fff;border-radius:10px;margin-bottom:20px;}'
-        '.small-card{display:inline-block;background:#fff;padding:14px 18px;border:1px solid #e2e8f0;border-radius:10px;margin:8px 8px 8px 0;}'
-        '.error{color:#c53030;}'
+        'body{font-family:Inter,system-ui,Arial,sans-serif;padding:0;margin:0;background:#f5f8fb;color:#1f2937;}'
+        'header{padding:24px;max-width:1200px;margin:0 auto;}'
+        '.topbar{display:flex;flex-wrap:wrap;gap:10px;padding:16px 24px;margin:0 auto 24px;max-width:1200px;}'
+        '.topbar a{padding:10px 14px;border-radius:9999px;background:rgba(59,130,246,0.12);color:#1d4ed8;text-decoration:none;font-size:0.95rem;transition:background 0.2s;}'
+        '.topbar a:hover{background:rgba(59,130,246,0.2);}'
+        'main{max-width:1200px;margin:0 auto;padding:0 24px 32px;}'
+        'h1{margin:0;font-size:2rem;color:#0f172a;}'
+        '.status{margin:16px 0;padding:14px 18px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;border-radius:10px;}'
+        'section{background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;padding:24px;box-shadow:0 16px 50px rgba(15,23,42,0.06);margin-bottom:24px;}'
+        '.hero{padding:28px;border-radius:18px;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);color:#ffffff;margin-bottom:24px;}'
+        '.hero p{opacity:.88;line-height:1.8;max-width:760px;}'
+        '.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:18px;}'
+        '.metric-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:18px;}'
+        '.metric-card h3{margin:0 0 10px;font-size:1.05rem;color:#0f172a;}'
+        '.metric-card p{font-size:2rem;margin:0;color:#1d4ed8;}'
+        '.metric-card small{color:#475569;}'
+        '.card-actions{display:grid;gap:12px;margin-top:24px;}'
+        '.card-actions a{display:inline-flex;align-items:center;justify-content:center;padding:14px 18px;border-radius:14px;text-decoration:none;font-weight:600;}'
+        '.primary-btn{background:#2563eb;color:#fff;}'
+        '.secondary-btn{background:#e2e8f0;color:#1f2937;}'
+        'table{border-collapse:collapse;width:100%;margin-top:16px;font-size:0.95rem;}'
+        'th,td{border:1px solid #e2e8f0;padding:12px;text-align:left;}'
+        'th{background:#f1f5f9;color:#0f172a;}'
+        'tr:nth-child(even){background:#f8fafc;}'
+        'input,select,button,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #cbd5e0;border-radius:12px;font-size:0.95rem;box-sizing:border-box;}'
+        'button{cursor:pointer;transition:filter 0.2s;}'
+        'button:hover{filter:brightness(1.05);}'
         '</style>'
         '</head><body>'
+        '<header>'
         f'<h1>{html.escape(title)}</h1>'
-        f'{nav}{status}<section>{body}</section>'
+        f'{status}'
+        '</header>'
+        f'{nav}'
+        '<main><section>'
+        f'{body}'
+        '</section></main>'
         '</body></html>'
     )
     return page
@@ -110,6 +129,48 @@ def table_from_objects(headers, rows):
     cells = ''.join(f'<th>{html.escape(h)}</th>' for h in headers)
     body = ''.join('<tr>' + ''.join(f'<td>{html.escape(str(c))}</td>' for c in row) + '</tr>' for row in rows)
     return f'<table><thead><tr>{cells}</tr></thead><tbody>{body}</tbody></table>'
+
+
+def allocation_errors_table(errors):
+    if not errors:
+        return '<h2>Recent Allocation Failures</h2><p>No recent allocation failures.</p>'
+    rows = [[entry['time'], entry['flight'], entry['reason']] for entry in errors]
+    return '<h2>Recent Allocation Failures</h2>' + table_from_objects(['Time', 'Flight', 'Reason'], rows)
+
+
+def home_page(message=None):
+    flight_count = len(flights.load_flights())
+    passenger_count = len(passenger.load_passengers())
+    counter_count = len(counters.load_counters())
+    aircraft_count = len(aircraft.load_aircraft())
+    crew_count = len(crew.load_crew())
+    gate_count = len(gates.load_gates())
+    runway_count = len(runways.load_runways())
+    resource_count = len(ground_resources.load_resources())
+    errors = get_recent_allocation_errors(5)
+    content = (
+        '<div class="hero">'
+        '<h2>Airport Operations Dashboard</h2>'
+        '<p>Track daily flights, manage airport resources, and resolve disruptions from a single interface.</p>'
+        '</div>'
+        '<div class="metric-grid">'
+        f'<div class="metric-card"><h3>Flights</h3><p>{flight_count}</p><small>Schedule entries</small></div>'
+        f'<div class="metric-card"><h3>Passengers</h3><p>{passenger_count}</p><small>Active bookings</small></div>'
+        f'<div class="metric-card"><h3>Counters</h3><p>{counter_count}</p><small>Service counters</small></div>'
+        f'<div class="metric-card"><h3>Aircraft</h3><p>{aircraft_count}</p><small>Aircraft profiles</small></div>'
+        f'<div class="metric-card"><h3>Crew</h3><p>{crew_count}</p><small>Crew records</small></div>'
+        f'<div class="metric-card"><h3>Gates</h3><p>{gate_count}</p><small>Gate resources</small></div>'
+        f'<div class="metric-card"><h3>Runways</h3><p>{runway_count}</p><small>Runway entries</small></div>'
+        f'<div class="metric-card"><h3>Resources</h3><p>{resource_count}</p><small>Support equipment</small></div>'
+        f'<div class="metric-card"><h3>Recent Failures</h3><p>{len(errors)}</p><small>Allocation issues</small></div>'
+        '</div>'
+        f'{allocation_errors_table(errors)}'
+        '<div class="card-actions">'
+        '<a class="primary-btn" href="/actions">Run System Actions</a>'
+        '<a class="secondary-btn" href="/notifications">View Notifications</a>'
+        '</div>'
+    )
+    return render_page('Airport Operations Dashboard', content, message)
 
 
 def all_flights_page(params=None, message=None):
@@ -152,7 +213,8 @@ def handle_add_flight(params):
     if not validate_flight(fno, arr, dep, flight_type, date, existing):
         return False, 'Flight validation failed'
     if not validate_flight_constraints(existing, fno, int(arr), int(dep)):
-        return False, 'Flight constraint violation'
+        reason = get_last_constraint_error() or 'Flight constraint violation'
+        return False, f'Flight constraint violation: {reason}'
     if not capacity.isdigit():
         return False, 'Capacity must be numeric'
 
@@ -160,6 +222,9 @@ def handle_add_flight(params):
         f.write(','.join([fno, airline, origin, destination, arr, dep, date, 'NA', flight_type, capacity]) + '\n')
 
     allocate_flight(next((fl for fl in flights.load_flights() if fl.fno == fno), None))
+    last_error = get_last_allocation_error()
+    if last_error:
+        return False, f'Allocation failed: {last_error["reason"]}'
     return True, f'Flight {fno} added and allocation attempted.'
 
 
@@ -169,6 +234,9 @@ def handle_allocate_flight(params):
     if not flight:
         return False, 'Flight not found'
     allocate_flight(flight)
+    last_error = get_last_allocation_error()
+    if last_error:
+        return False, f'Allocation failed: {last_error["reason"]}'
     return True, f'Allocation attempted for {fno}.'
 
 
@@ -539,6 +607,10 @@ def actions_page(params=None, message=None):
         '<input type="hidden" name="action" value="resolve_conflicts">'
         '<button type="submit">Resolve Resource Conflicts</button>'
         '</form>'
+        '<form method="post">'
+        '<input type="hidden" name="action" value="system_rebalance">'
+        '<button type="submit">Run Emergency System Rebalance</button>'
+        '</form>'
     )
     return render_page('System Actions', content, message)
 
@@ -554,6 +626,9 @@ def handle_action(params):
     if action == 'resolve_conflicts':
         resolve_conflicts()
         return True, 'Conflict resolution completed.'
+    if action == 'system_rebalance':
+        system_rebalance()
+        return True, 'Emergency system rebalance completed.'
     return False, 'Unknown action.'
 
 
@@ -567,12 +642,7 @@ def application(environ, start_response):
         params = parse_post(environ)
 
     if path == '/':
-        content = '<p>Minimal web front end for the Airport Operations system.</p>'
-        content += '<ul>'
-        content += '<li>Use the pages to manage flights, passengers, counters, aircraft, crew, gates, runways, ground resources, disruptions, and notifications.</li>'
-        content += '<li>Submit forms to add new items and trigger system actions.</li>'
-        content += '</ul>'
-        return response(start_response, render_page('Airport Operations Front End', content, message))
+        return response(start_response, home_page(message))
 
     if path == '/flights':
         if method == 'POST':

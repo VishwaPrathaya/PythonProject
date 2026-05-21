@@ -113,8 +113,8 @@ def remove_gate():
 
     #  TRIGGER
     print("- Reallocating pending flights...")
-    from allocation_engine import try_schedule_pending_flights
-    try_schedule_pending_flights()
+    from allocation_engine import system_rebalance
+    system_rebalance()
 
 
 # ---------------- UPDATE ----------------
@@ -179,24 +179,23 @@ def update_gate():
 
     # - SMART TRIGGER (same logic as aircraft)
 
-    # - Became FREE → try allocation
+    # - Became FREE → rebalance system
     if target.availability == "Free" and old_availability != "Free":
-        print(" Gate became free → reallocating flights")
+        print(" Gate became free → triggering system rebalance")
 
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        from allocation_engine import system_rebalance
+        system_rebalance()
 
     # - Became OCCUPIED manually → reset system safely
     elif target.availability != "Free" and old_availability == "Free":
         print(" Gate manually occupied → resetting allocations")
 
-        from allocation_engine import load_allocations, remove_allocation_for_flight
+        from allocation_engine import load_allocations, remove_allocation_for_flight, system_rebalance
 
         allocations = load_allocations()
 
         for fno, data in allocations.items():
             if len(data) > 2 and data[2] == gid:
-                remove_allocation_for_flight(fno)
+                remove_allocation_for_flight(fno, auto_reallocate=False)
 
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        system_rebalance()

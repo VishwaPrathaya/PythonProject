@@ -93,9 +93,9 @@ def writeData():
             new_added = True
 
     if new_added:
-        print("- New counters available → reallocating pending flights")
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        print("- New counters available → triggering system rebalance")
+        from allocation_engine import system_rebalance
+        system_rebalance()
 
 
 def add_counter():
@@ -146,9 +146,9 @@ def remove_counter():
             f.write(",".join([c.counter_id, c.gate_id, c.terminal, c.service_type, c.availability, str(c.capacity)]) + "\n")
 
     print(f"Counter {cid} removed successfully")
-    print("- Reallocating pending flights...")
-    from allocation_engine import try_schedule_pending_flights
-    try_schedule_pending_flights()
+    print("- Triggering system rebalance after counter removal...")
+    from allocation_engine import system_rebalance
+    system_rebalance()
 
 
 # ---------------- UPDATE ----------------
@@ -195,7 +195,7 @@ def update_counter():
 
     print(f"Counter {cid} updated successfully")
 
-    from allocation_engine import load_allocations, remove_allocation_for_flight, try_schedule_pending_flights
+    from allocation_engine import load_allocations, remove_allocation_for_flight, system_rebalance
     allocations = load_allocations()
 
     if target.availability != "Available" and old_availability == "Available":
@@ -204,12 +204,12 @@ def update_counter():
             if len(data) >= 7:
                 counter_ids = data[6].split("|")
                 if cid in counter_ids:
-                    remove_allocation_for_flight(fno)
-        print("- Reallocating pending flights...")
-        try_schedule_pending_flights()
+                    remove_allocation_for_flight(fno, auto_reallocate=False)
+        print("- Triggering system rebalance after counter release...")
+        system_rebalance()
     else:
-        print("- Reallocating pending flights...")
-        try_schedule_pending_flights()
+        print("- Triggering system rebalance after counter update...")
+        system_rebalance()
 
 
 # ---------------- HELPERS ----------------

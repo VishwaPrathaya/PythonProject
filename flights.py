@@ -148,13 +148,12 @@ def remove_flight():
     print(f"- Flight {fno} removed from system")
 
     # - remove allocation + free resources
-    from allocation_engine import remove_allocation_for_flight
-    remove_allocation_for_flight(fno)
+    from allocation_engine import remove_allocation_for_flight, system_rebalance
+    remove_allocation_for_flight(fno, auto_reallocate=False)
 
-    # - try reallocating pending flights
-    print(" Attempting reallocation for pending flights...")
-    from allocation_engine import try_schedule_pending_flights
-    try_schedule_pending_flights()
+    # - perform centralized rebalance after freeing resources
+    print(" Attempting system rebalance for pending flights...")
+    system_rebalance()
 
 
 def update_flight():
@@ -221,10 +220,10 @@ def update_flight():
         target.capacity = int(capacity)
 
     #  If timing changed → remove old allocation
-    from allocation_engine import remove_allocation_for_flight
+    from allocation_engine import remove_allocation_for_flight, system_rebalance
 
     print(" Removing old allocation (if any)...")
-    remove_allocation_for_flight(fno)
+    remove_allocation_for_flight(fno, auto_reallocate=False)
 
     # SAVE UPDATED FILE
     with open("flights.csv", "w") as f:
@@ -237,7 +236,6 @@ def update_flight():
 
     print(" Flight updated successfully")
 
-    # - TRY REALLOCATION
-    print("- Attempting reallocation...")
-    from allocation_engine import allocate_flight
-    allocate_flight(target)
+    # - CENTRALIZED SYSTEM REBALANCE
+    print("- Attempting centralized system rebalance...")
+    system_rebalance()

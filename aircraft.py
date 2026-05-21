@@ -74,8 +74,8 @@ def writeData():
 
     print(" Aircraft added !! ")
 
-    from allocation_engine import try_schedule_pending_flights
-    try_schedule_pending_flights()
+    from allocation_engine import system_rebalance
+    system_rebalance()
 
 
 # ---------------- UPDATE ----------------
@@ -138,7 +138,7 @@ def update_aircraft():
 
     
 
-    from allocation_engine import load_allocations, remove_allocation_for_flight, try_schedule_pending_flights
+    from allocation_engine import load_allocations, remove_allocation_for_flight, system_rebalance
 
     allocations = load_allocations()
 
@@ -152,15 +152,18 @@ def update_aircraft():
                 affected_flights.append(fno)
 
         for fno in affected_flights:
-            remove_allocation_for_flight(fno)
+            remove_allocation_for_flight(fno, auto_reallocate=False)
 
         if affected_flights:
             print(f" Aircraft removed from flights: {affected_flights}")
 
-    #  If aircraft becomes usable → try allocation
+        print(" Triggering system rebalance after aircraft update...")
+        system_rebalance()
+
+    #  If aircraft becomes usable → rebalance system
     else:
-        print(" Trying to allocate pending flights...")
-        try_schedule_pending_flights()
+        print(" Trying to rebalance pending flights...")
+        system_rebalance()
 # ---------------- REMOVE ----------------
 def remove_aircraft():
 

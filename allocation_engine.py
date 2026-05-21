@@ -5,6 +5,39 @@ from crew import load_crew
 from ground_resources import load_resources
 from counters import load_counters, update_counter_file, get_available_counters, create_counter
 
+from datetime import datetime
+
+allocation_error_log = []
+last_allocation_error = None
+
+
+def record_allocation_error(fno, reason):
+    global allocation_error_log, last_allocation_error
+    timestamp = datetime.now().isoformat(timespec='seconds')
+    entry = {'flight': fno, 'reason': reason, 'time': timestamp}
+    allocation_error_log.append(entry)
+    last_allocation_error = entry
+    if len(allocation_error_log) > 30:
+        allocation_error_log.pop(0)
+    try:
+        with open('allocation_error_log.csv', 'a', encoding='utf-8') as f:
+            f.write(f"{timestamp},{fno},{reason}\n")
+    except Exception:
+        pass
+
+
+def get_recent_allocation_errors(count=10):
+    return allocation_error_log[-count:]
+
+
+def get_last_allocation_error():
+    return last_allocation_error
+
+
+def clear_last_allocation_error():
+    global last_allocation_error
+    last_allocation_error = None
+
 
 
 # ---------------- LOAD EXISTING ALLOCATIONS ----------------
@@ -266,7 +299,9 @@ def allocate_flight(flight):
     allocations = load_allocations()
 
     if flight.fno in allocations:
-        print(f"Flight {flight.fno} already allocated")
+        reason = f"Flight {flight.fno} already allocated"
+        print(reason)
+        record_allocation_error(flight.fno, reason)
         return
 
     aircraft_list = load_aircraft()
@@ -279,13 +314,17 @@ def allocate_flight(flight):
     # -------- AIRCRAFT --------
     aircraft = get_available_aircraft(flight, aircraft_list, flights)
     if not aircraft:
-        print(f" No aircraft available for flight {flight.fno}")
+        reason = f"No aircraft available for flight {flight.fno}"
+        print(f" {reason}")
+        record_allocation_error(flight.fno, reason)
         return
 
     # -------- GATE --------
     selected_gate = get_available_gate(flight, gates, allocations, flights, aircraft)
     if not selected_gate:
-        print(f" No suitable gate available for flight {flight.fno}")
+        reason = f"No suitable gate available for flight {flight.fno}"
+        print(f" {reason}")
+        record_allocation_error(flight.fno, reason)
         return
 
     # -------- COUNTER --------
@@ -337,25 +376,33 @@ def allocate_flight(flight):
                     break
 
         if total_capacity < required_capacity:
-            print(f" Not enough counter capacity at gate {selected_gate.gate_id} for flight {flight.fno} even after auto-creation")
+            reason = f"Not enough counter capacity at gate {selected_gate.gate_id} for flight {flight.fno} even after auto-creation"
+            print(f" {reason}")
+            record_allocation_error(flight.fno, reason)
             return
 
     # -------- RUNWAY --------
     selected_runway = get_available_runway(flight, runways, allocations, flights)
     if not selected_runway:
-        print(f" No runway available for flight {flight.fno}")
+        reason = f"No runway available for flight {flight.fno}"
+        print(f" {reason}")
+        record_allocation_error(flight.fno, reason)
         return
 
     # -------- CREW --------
     selected_crew = get_available_crew(crew_list, aircraft.atype)
     if not selected_crew:
-        print(f" Not enough crew for flight {flight.fno}")
+        reason = f"Not enough crew for flight {flight.fno}"
+        print(f" {reason}")
+        record_allocation_error(flight.fno, reason)
         return
 
     # -------- RESOURCES --------
     selected_res = get_available_resources(resources, allocations, interactive=False)
     if not selected_res:
-        print(f" Not enough resources for flight {flight.fno}")
+        reason = f"Not enough resources for flight {flight.fno}"
+        print(f" {reason}")
+        record_allocation_error(flight.fno, reason)
         return
 
     # -------- FINAL UPDATE (ONLY AFTER FULL SUCCESS) --------
@@ -407,13 +454,14 @@ def allocate_flight(flight):
     print(f"   Runway   : {selected_runway.runway_id}")
     print(f"   Counters : {[c.counter_id for c in selected_counters]}")
     print(f"   Crew     : {[c.crew_id for c in selected_crew]}")
+    clear_last_allocation_error()
     print(f"   Resources: {[r.res_id for r in selected_res]}")
 
     print(" Trigger: Allocation successful → System state updated")
 
 
 # ---------------- SCHEDULE PENDING FLIGHTS ----------------
-def try_schedule_pending_flights():
+def try_schedule_pending_flights(resolve_conflicts_on_finish=True):
     from flights import load_flights
     flights = load_flights()
 
@@ -421,12 +469,16 @@ def try_schedule_pending_flights():
 
     if not pending:
         print("No pending flights to allocate")
-        return
+    else:
+        print(f"\n Found {len(pending)} pending flight(s). Attempting allocation...")
 
-    print(f"\n Found {len(pending)} pending flight(s). Attempting allocation...")
+        for flight in pending:
+            allocate_flight(flight)
 
-    for flight in pending:
-        allocate_flight(flight)
+    if resolve_conflicts_on_finish:
+        print("\nTrigger: pending allocation complete → checking for conflicts")
+        from conflict_resolution import resolve_conflicts
+        resolve_conflicts()
 
 
 def refresh_flight_allocation(fno):
@@ -529,10 +581,11 @@ def remove_allocation_for_flight(fno, auto_reallocate=True):
 def handle_cancellation(fno):
     """Handle a flight cancellation: fully remove allocation and mark flight as removed from schedule.
 
-    Note: This function frees resources and then attempts reallocation of pending flights.
+    Note: This function frees resources and then performs a centralized system rebalance.
     """
     print(f"Handling cancellation for flight {fno}")
-    remove_allocation_for_flight(fno)
+    remove_allocation_for_flight(fno, auto_reallocate=False)
+    system_rebalance()
     # Create operator rebooking notifications (non-interactive)
     try:
         from passenger_booking import offer_rebooking_notifications
@@ -543,11 +596,13 @@ def handle_cancellation(fno):
 
 def handle_delay(fno):
     """Handle a flight delay: remove current allocation so resources become available,
-    then attempt to reallocate pending flights. The delayed flight remains in the
-    flights file so it can be reallocated later with updated times.
+    then perform a system rebalance to reallocate resources and resolve conflicts.
+    The delayed flight remains in the flights file so it can be reallocated later
+    with updated times.
     """
     print(f"Handling delay for flight {fno}")
-    remove_allocation_for_flight(fno)
+    remove_allocation_for_flight(fno, auto_reallocate=False)
+    system_rebalance()
 
 
 def release_expired_allocations(current_time=None):
@@ -574,4 +629,16 @@ def release_expired_allocations(current_time=None):
 
             if dep_time <= current_time:
                 print(f"Releasing expired allocation for flight {f.fno} (dep {dep_time} <= now {current_time})")
-                remove_allocation_for_flight(f.fno)
+                remove_allocation_for_flight(f.fno, auto_reallocate=False)
+
+
+def system_rebalance(current_time=None):
+    """Handle emergency updates and perform an automatic system rebalance.
+
+    This wrapper releases expired allocations, schedules pending flights,
+    and resolves any resulting conflicts automatically.
+    """
+    print("\n=== SYSTEM REBALANCE STARTED ===")
+    release_expired_allocations(current_time=current_time)
+    try_schedule_pending_flights(resolve_conflicts_on_finish=True)
+    print("=== SYSTEM REBALANCE COMPLETE ===\n")

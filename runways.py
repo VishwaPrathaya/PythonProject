@@ -127,8 +127,8 @@ def remove_runway():
     print("- Runway removed successfully")
 
     # - RE-ALLOCATE
-    from allocation_engine import try_schedule_pending_flights
-    try_schedule_pending_flights()
+    from allocation_engine import system_rebalance
+    system_rebalance()
 
 
 # ---------------- UPDATE ----------------
@@ -186,11 +186,11 @@ def update_runway():
 
     # - SAME DESIGN PATTERN (NO RELEASE FUNCTION)
     if target.availability == "Free" and target.maintenance_window == "No":
-        print("- Runway available → reallocating flights")
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        print("- Runway available → triggering system rebalance")
+        from allocation_engine import system_rebalance
+        system_rebalance()
 
     else:
         print("- Runway unavailable → affected flights will be reprocessed")
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        from allocation_engine import system_rebalance
+        system_rebalance()

@@ -85,9 +85,9 @@ def writeData():
 
     # - TRIGGER (same as aircraft)
     if new_added:
-        print("- New resources available → reallocating flights")
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        print("- New resources available → triggering system rebalance")
+        from allocation_engine import system_rebalance
+        system_rebalance()
 
 
 # ---------------- REMOVE ----------------
@@ -138,9 +138,9 @@ def remove_resource():
     print("- Resource removed successfully")
 
     #  TRIGGER
-    print("- Reallocating pending flights...")
-    from allocation_engine import try_schedule_pending_flights
-    try_schedule_pending_flights()
+    print("- Triggering system rebalance after resource removal...")
+    from allocation_engine import system_rebalance
+    system_rebalance()
 
 
 # ---------------- UPDATE ----------------
@@ -196,10 +196,10 @@ def update_resource():
 
     # - Became AVAILABLE → allocate
     if target.status == "Available" and old_status != "Available":
-        print(" Resource became available → reallocating flights")
+        print(" Resource became available → triggering system rebalance")
 
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        from allocation_engine import system_rebalance
+        system_rebalance()
 
     # - Became IN USE manually → reset system
     elif target.status == "In Use" and old_status == "Available":
@@ -215,7 +215,7 @@ def update_resource():
                 used_resources = data[5].split("|")
 
                 if rid in used_resources:
-                    remove_allocation_for_flight(fno)
+                    remove_allocation_for_flight(fno, auto_reallocate=False)
 
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        from allocation_engine import system_rebalance
+        system_rebalance()

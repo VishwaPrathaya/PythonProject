@@ -1,5 +1,47 @@
 # PythonProject — README
 
+## System Workflow
+
+This airport operations system is intended to follow an event-driven operational flow:
+
+START SYSTEM
+    ↓
+Load Static Airport Data
+    ↓
+Load Daily Flight Schedule
+    ↓
+Generate Initial Operational Plan
+    ↓
+Start Real-Time Event Loop
+    ↓
+Receive Live Event
+    ↓
+Update System State
+    ↓
+Check Affected Resources
+    ↓
+Detect Conflicts
+    ↓
+Need Rescheduling?
+   / \
+ YES  NO
+  ↓    ↓
+Reoptimize    Continue Monitoring
+  ↓
+Update All Dependent Modules
+  ↓
+Generate Notifications & Reports
+  ↓
+Return to Event Loop
+
+This maps to the current project as:
+- `main.py` for system startup and interactive orchestration
+- static CSV loaders for airport data (`gates.csv`, `runwaydetails.csv`, `aircraft.csv`, `crew.csv`, `ground_resources.csv`, `counters.csv`)
+- daily schedule loading from `flights.csv`
+- allocation and optimization via `allocation_engine.py`, `optimization.py`, and `auto_scheduler.py`
+- conflict detection and resolution via `conflict_resolution.py`
+- passenger handling and notification support through `passenger_booking.py`, `passenger_allocation.py`, and `frontend.py`
+
 ## Counter Module
 
 Purpose

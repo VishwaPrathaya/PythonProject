@@ -135,5 +135,5 @@ def resolve_conflicts():
         remove_allocation_for_flight(fno, auto_reallocate=False)
 
     print(" Attempting to reallocate pending flights after conflict resolution...")
-    try_schedule_pending_flights()
+    try_schedule_pending_flights(resolve_conflicts_on_finish=False)
     print("=== CONFLICT RESOLUTION COMPLETE ===\n")

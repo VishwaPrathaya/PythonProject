@@ -203,14 +203,14 @@ def update_crew():
 
     
 
-    from allocation_engine import load_allocations, remove_allocation_for_flight, try_schedule_pending_flights
+    from allocation_engine import load_allocations, remove_allocation_for_flight, system_rebalance
 
     allocations = load_allocations()
 
     # CASE 1: Crew becomes AVAILABLE → try allocation
     if target.status == "Available":
-        print(" Crew available → trying to allocate pending flights...")
-        try_schedule_pending_flights()
+        print(" Crew available → triggering system rebalance...")
+        system_rebalance()
 
     # CASE 2: Crew becomes UNAVAILABLE → remove full allocations
     else:
@@ -225,7 +225,7 @@ def update_crew():
 
         for fno in affected:
             print(f" Removing full allocation for flight {fno}")
-            remove_allocation_for_flight(fno)
+            remove_allocation_for_flight(fno, auto_reallocate=False)
 
-        print(" Attempting to allocate pending flights after crew release...")
-        try_schedule_pending_flights()
+        print(" Attempting system rebalance after crew release...")
+        system_rebalance()

@@ -85,8 +85,8 @@ def remove_disruption():
     if target.status == "Pending":
         print(" Active disruption removed → restoring system")
 
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        from allocation_engine import system_rebalance
+        system_rebalance()
 
     # - SAVE FILE
     with open("disruption.csv", "w") as f:
@@ -226,8 +226,8 @@ def _handle_disruption_update(disruption, old_status):
 
         print("Reallocation triggered (disruption resolved)")
 
-        from allocation_engine import try_schedule_pending_flights
-        try_schedule_pending_flights()
+        from allocation_engine import system_rebalance
+        system_rebalance()
 
     #  CASE 2: STILL PENDING → apply disruption logic
     elif disruption.status == "Pending":
@@ -236,15 +236,16 @@ def _handle_disruption_update(disruption, old_status):
 
             print("Trigger: Release aircraft, crew, gate, runway")
 
-            from allocation_engine import remove_allocation_for_flight
-            remove_allocation_for_flight(fno)
+            from allocation_engine import remove_allocation_for_flight, system_rebalance
+            remove_allocation_for_flight(fno, auto_reallocate=False)
+            system_rebalance()
 
         elif disruption.disruption_type == "Delay":
 
             print("Trigger: Reschedule flight")
 
-            from allocation_engine import try_schedule_pending_flights
-            try_schedule_pending_flights()
+            from allocation_engine import system_rebalance
+            system_rebalance()
 
         elif disruption.disruption_type in ["Technical", "Weather"]:
 

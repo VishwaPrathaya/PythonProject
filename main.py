@@ -15,25 +15,27 @@ def main():
 
     while True:
 
-        print("\n===== AIRPORT OPERATIONS MANAGEMENT SYSTEM =====")
-        print("1. Flight Module")
-        print("2. Gate Module")
-        print("3. Counter Module")
-        print("4. Passenger Module")
-        print("5. Runway Module")
-        print("6. Crew Module")
-        print("7. Aircraft Module")
-        print("8. Ground Resources Module")
-        print("9. Disruption Module")
-        print("10. Display All Data")
-        print("11. Run Cleanup (release expired allocations)")
+        print("\n===================================================")
+        print("  AIRPORT OPERATIONS MANAGEMENT SYSTEM")
+        print("===================================================")
+        print("1. Flights")
+        print("2. Gates")
+        print("3. Counters")
+        print("4. Passengers")
+        print("5. Runways")
+        print("6. Crew")
+        print("7. Aircraft")
+        print("8. Ground Resources")
+        print("9. Disruptions")
+        print("10. View All Data")
+        print("11. Release Expired Allocations")
         print("12. Resolve Conflicts")
         print("13. Exit")
 
         try:
-            ch = int(input("\nEnter your choice: "))
+            ch = int(input("\nSelect an option [1-13]: "))
         except:
-            print("Invalid input. Enter a number.")
+            print("Invalid input. Please enter a number between 1 and 13.")
             continue
 
         # -------- FLIGHT --------
